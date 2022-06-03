@@ -1,13 +1,11 @@
 import React from "react";
 import Home from "../components/Home";
-import {Link} from "react-router-dom";
 
-export default function Homepage() {
+export default function Homepage(props) {
     return (
         <div className="container-fluid">
-            <Link to="/room" className="nav-link">Room</Link>
             <h2>Homepage</h2>
-            <Home/>
+            <Home server={props.server}/>
         </div>
     );
 }

@@ -1,11 +1,16 @@
 import React, {useState} from "react";
 import AddRoom from "./AddRoom";
+import axios from "axios";
+import RoomList from "./RoomList";
 
-export default function Home() {
-    const [addRoom, setAddRoom] = useState(true); //TODO false
+export default function Home(props) {
+    const [addRoom, setAddRoom] = useState(false);
 
     function onAdd(room) {
-        console.log("room added " + room.name + " - " + room.player)
+        axios.post("http://localhost:4001/rooms", room)
+            .then(response => {
+                onCancel();
+            });
     }
 
     function onCancel() {
@@ -16,6 +21,7 @@ export default function Home() {
         <>
             {!addRoom && <button onClick={() => setAddRoom(!addRoom)}>Add a room</button>}
             {addRoom && <AddRoom onAdd={onAdd} onCancel={onCancel}/>}
+            <RoomList server={props.server}/>
         </>
     );
 }
