@@ -1,4 +1,4 @@
-import {Link, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 import React, {useState} from "react";
 import axios from "axios";
 
@@ -12,9 +12,14 @@ export default function Roompage(props) {
             setName(response.data.name);
         });
 
+    function handleBtnHome() {
+        axios.post("http://localhost:4001/room/leave/" + id, null)
+            .then(r => window.location.href = "/");
+    }
+
     return (
         <div className="container-fluid">
-            <Link to="/" className="nav-link">Home</Link>
+            <button onClick={handleBtnHome}>Leave</button>
 
             <h2>Room {name}</h2>
         </div>

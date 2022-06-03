@@ -7,9 +7,26 @@ module.exports = function (app, props) {
         .post((req, res) => {
             roomController.addRoom(req, res);
             props.updateVisibleRooms(null);
+            props.updateOnlineGames(null);
         });
     app.route('/room/:id')
         .get(roomController.getRoom)
     //.put(roomController.updateRoom)
     //.delete(roomController.deleteRoom);
+    app.route('/room/join/:id')
+        .post((req, res) => {
+            roomController.updateRoomCount(req, res, req.params.id, true);
+            props.updateVisibleRooms(null);
+            props.updateOnlineGames(null);
+        });
+    app.route('/room/leave/:id')
+        .post((req, res) => {
+            roomController.updateRoomCount(req, res, req.params.id, false);
+            props.updateVisibleRooms(null);
+            props.updateOnlineGames(null);
+        });
+    app.route('/rooms/active-count')
+        .get(roomController.countActiveRooms)
+    app.route('/rooms/played-count')
+        .get(roomController.countPlayedGames)
 };
