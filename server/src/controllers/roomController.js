@@ -1,31 +1,33 @@
+const RoomConstants = require("../models/roomConstants").RoomConstants;
+
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/tris');
 const roomModel = require('../models/roomModel')(mongoose);
 
-const NEW = 0;
-const FULL = 1;
-const STARTED = 2;
-const FINISHED = 3;
-const CLOSED = 4;
-const ABORTED = 5;
 
 exports.listRooms = function (req, res) {
-    roomModel.find({status: NEW}, function (err, doc) {
+    roomModel.find({status: RoomConstants.NEW}, function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
 }
 
-exports.getRoom = function (req, res) {
-    roomModel.findById(req.params.id, function (err, doc) {
-        handleMongooseResponse(res, err, doc);
-    })
+exports.getRoom = async function (req, res, returnRoom) {
+    const id = req.params.id;
+    const doc = await roomModel.findById(id);
+    handleMongooseResponse(res, null, doc);
+    if (returnRoom) {
+        return doc;
+    }
 }
 
 exports.addRoom = function (req, res) {
-    req.body.status = NEW;
+    req.body.status = RoomConstants.NEW;
     req.body.playerCount = 0;
     req.body.player0 = '';
     req.body.player1 = '';
+    req.body.values = Array(RoomConstants.SPOTS).fill(RoomConstants.UNSET);
+    req.body.winner = '';
+    req.body.victoryPos = '';
     new roomModel(req.body).save(function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
@@ -36,7 +38,7 @@ exports.startGame = async function (req, res) {
     const playerId = req.body.myId;
     const doc = await roomModel.findById(id);
 
-    doc.status = STARTED;
+    doc.status = RoomConstants.STARTED;
     return await doc.save().then(savedDoc => {
         handleMongooseResponse(res, null, savedDoc);
         return savedDoc.player0 != playerId ? savedDoc.player0 : savedDoc.player1;
@@ -44,13 +46,13 @@ exports.startGame = async function (req, res) {
 }
 
 exports.countActiveRooms = function (req, res) {
-    roomModel.count({status: {$in: [FULL, STARTED, FINISHED]}}, function (err, doc) {
+    roomModel.count({status: {$in: [RoomConstants.FULL, RoomConstants.STARTED, RoomConstants.FINISHED]}}, function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
 }
 
 exports.countPlayedGames = function (req, res) {
-    roomModel.count({status: {$in: [FINISHED, CLOSED]}}, function (err, doc) {
+    roomModel.count({status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}, function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
 }
@@ -81,27 +83,134 @@ exports.updateRoomCount = async function (req, res, playerJoined) {
     })
 }
 
-function updateRoomStatus(doc) {
-    if (doc.playerCount <= 0) {
-        doc.status = doc.status == FINISHED ? CLOSED : ABORTED;
-        doc.save();
-    } else if (doc.playerCount == 1) {
-        if (doc.status == FULL || doc.status == STARTED) {
-            let newStatus = doc.status == FULL ? NEW : ABORTED;
-            doc.status = newStatus;
-            doc.save();
-
-            if (newStatus == ABORTED) {
-                return doc.player0 != '' ? doc.player0 : doc.player1;
-            }
-        }
-    } else {
-        if (doc.status == NEW) {
-            doc.status = FULL;
-            doc.save();
+exports.actionGame = async function (req, res) {
+    const id = req.params.id;
+    const playerId = req.body.myId;
+    const doc = await roomModel.findById(id);
+    doc.values[req.body.index] = doc.player0 == playerId ? RoomConstants.CIRCLE : RoomConstants.CROSS;
+    doc.player = !doc.player;
+    const checkResult = checkForGameEnd(doc);
+    if (checkResult.gameEnded) {
+        doc.status = RoomConstants.FINISHED;
+        if (checkResult.victory) {
+            doc.winner = checkResult.lastValue == RoomConstants.CIRCLE ? 'player0' : 'player1';
+            doc.victoryPos = checkResult.victoryPos;
+        } else {
+            doc.winner = '';
+            doc.victoryPos = '';
         }
     }
+
+    return await doc.save().then(savedDoc => {
+        handleMongooseResponse(res, null, savedDoc);
+        return savedDoc;
+    })
+}
+
+function updateRoomStatus(doc) {
+    let newStatus = doc.status;
+    if (doc.playerCount <= 0) {
+        newStatus = doc.status == RoomConstants.FINISHED ? RoomConstants.CLOSED : RoomConstants.ABORTED
+    } else if (doc.playerCount == 1) {
+        if (doc.status == RoomConstants.FULL || doc.status == RoomConstants.STARTED) {
+            newStatus = doc.status == RoomConstants.FULL ? RoomConstants.NEW : RoomConstants.ABORTED;
+        }
+    } else {
+        if (doc.status == RoomConstants.NEW) {
+            newStatus = RoomConstants.FULL;
+        }
+    }
+    if (newStatus != doc.status) {
+        doc.status = newStatus;
+        doc.save();
+        return {newStatus: newStatus, player0: doc.player0, player1: doc.player1};
+    }
     return false;
+}
+
+function checkForGameEnd(doc) {
+    const values = doc.values;
+    const valuesPerRow = values.length / RoomConstants.SPOTS_PER_ROW;
+
+    let victory = false;
+    let victoryPos = '';
+    let lastValue = RoomConstants.UNSET;
+    //Check per rows
+    for (let i = 0; i < valuesPerRow && !victory; i++) {
+        if (values[i * valuesPerRow] == RoomConstants.UNSET) {
+            continue;
+        }
+        lastValue = values[i * valuesPerRow];
+        for (let j = 1; j < valuesPerRow && !victory; j++) {
+            if (values[i * valuesPerRow + j] == lastValue) {
+                if (j == valuesPerRow - 1) {
+                    victory = true;
+                    victoryPos = 'r' + i;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    //Check per cols
+    for (let i = 0; i < valuesPerRow && !victory; i++) {
+        if (values[i] == RoomConstants.UNSET) {
+            continue;
+        }
+        lastValue = values[i];
+        for (let j = 1; j < valuesPerRow && !victory; j++) {
+            if (values[i + j * valuesPerRow] == lastValue) {
+                if (j == valuesPerRow - 1) {
+                    victory = true;
+                    victoryPos = 'c' + i;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    //Check per main diag
+    if (values[0] != RoomConstants.UNSET) {
+        lastValue = values[0];
+        for (let i = 1; i < valuesPerRow && !victory; i++) {
+            if (values[i * (valuesPerRow + 1)] == lastValue) {
+                if (i == valuesPerRow - 1) {
+                    victory = true;
+                    victoryPos = 'd0';
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    //Check per secondary diag
+    if (values[valuesPerRow - 1] != RoomConstants.UNSET) {
+        lastValue = values[valuesPerRow - 1];
+        for (let i = 2; i <= valuesPerRow && !victory; i++) {
+            if (values[i * (valuesPerRow - 1)] == lastValue) {
+                if (i == valuesPerRow) {
+                    victory = true;
+                    victoryPos = 'd1';
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    //Check for no more moves available
+    let gameEnded = true;
+    for (let i = 0; i < values.length && !victory; i++) {
+        if (values[i] == RoomConstants.UNSET) {
+            gameEnded = false;
+            break;
+        }
+    }
+
+    return {gameEnded: gameEnded, victory: victory, victoryPos: victoryPos, lastValue: lastValue};
 }
 
 function handleMongooseResponse(res, err, doc) {

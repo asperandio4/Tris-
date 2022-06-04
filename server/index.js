@@ -10,6 +10,7 @@ const corsOpts = {
 app.options("*", cors(corsOpts));
 app.use(cors(corsOpts));
 const routes = require("./src/routes/index");
+const RoomConstants = require("./src/models/roomConstants").RoomConstants;
 
 let updateVisibleRooms = function (client) {
     require("axios")
@@ -44,15 +45,51 @@ let updatePlayedGames = function (client) {
         }
     });
 }
-let informGameStarted = function (playerId) {
-    clients.get(playerId).emit("game_started");
+let informGameStatus = function (room, playerId) {
+    const client = clients.get(playerId);
+    if (client !== undefined) {
+        client.emit("game_full", room.status == RoomConstants.FULL || room.status == RoomConstants.STARTED);
+        client.emit("game_started", room.status == RoomConstants.STARTED);
+        client.emit("game_finished", room.status == RoomConstants.FINISHED);
+        client.emit("game_aborted", room.status == RoomConstants.ABORTED);
+        client.emit("my_name", room.player0 == playerId ? 'player0' : 'player1');
+        client.emit("my_turn", (!room.player && room.player0 == playerId) || (room.player && room.player1 == playerId));
+        client.emit("game_values", room.values);
+        client.emit("game_winner", room.winner);
+        client.emit("game_victory_pos", room.victoryPos);
+    } else {
+        console.log("undefined!");
+    }
+}
+let informGameFull = function (playerId, full) {
+    const client = clients.get(playerId);
+    if (client !== undefined) {
+        client.emit("game_full", full);
+    } else {
+        console.log("undefined!");
+    }
+}
+let informGameStarted = function (playerId, started) {
+    const client = clients.get(playerId);
+    if (client !== undefined) {
+        client.emit("game_started", started);
+    } else {
+        console.log("undefined!");
+    }
 }
 let informGameAborted = function (playerId) {
-    clients.get(playerId).emit("game_aborted");
+    const client = clients.get(playerId);
+    if (client !== undefined) {
+        client.emit("game_aborted", true);
+    } else {
+        console.log("undefined!");
+    }
 }
 let functions = {
     updateVisibleRooms: updateVisibleRooms,
     updateOnlineGames: updateOnlineGames,
+    informGameStatus: informGameStatus,
+    informGameFull: informGameFull,
     informGameStarted: informGameStarted,
     informGameAborted: informGameAborted,
 };
@@ -65,8 +102,8 @@ const io = new (require("socket.io").Server)(httpServer, {
 
 let clients = new Map;
 io.on("connection", (socket) => {
-    console.log("New client connected");
     let id = socket.handshake.query.myId;
+    console.log("New client connected: " + id);
     clients.set(id, socket);
     updateVisibleRooms(socket);
     updateOnlineUsers();
@@ -74,7 +111,7 @@ io.on("connection", (socket) => {
     updatePlayedGames(socket);
 
     socket.on("disconnect", () => {
-        console.log("Client disconnected");
+        console.log("Client disconnected: " + id);
         clients.delete(id);
         updateOnlineUsers();
     });

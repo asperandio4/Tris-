@@ -9,17 +9,21 @@ export default function RoomBlock(props) {
             .then(() => window.location.href = "/room/" + props.room._id);
     }
 
-    let startingPlayer;
-    if (props.room.player == ME) {
-        startingPlayer = props.room.player0 != '' ? 'Opponent' : 'Me';
-    } else {
-        startingPlayer = props.room.player0 != '' ? 'Me' : 'Opponent';
+    function getStartingPlayer() {
+        let startingPlayer;
+        if (props.room.player == ME) {
+            startingPlayer = props.room.player0 != '' ? 'Opponent' : 'Me';
+        } else {
+            startingPlayer = props.room.player0 != '' ? 'Me' : 'Opponent';
+        }
+        return startingPlayer;
     }
+
 
     return (
         <div>
             <h3>{props.room.name}</h3>
-            <p>Starting player: {startingPlayer}</p>
+            <p>Starting player: {getStartingPlayer()}</p>
             {props.room.playerCount == 1 && <button onClick={handleBtnJoin}>Join!</button>}
         </div>
     );

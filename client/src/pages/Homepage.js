@@ -1,7 +1,10 @@
-import React from "react";
+import React, {useEffect} from "react";
 import Home from "../components/Home";
 
 export default function Homepage(props) {
+    useEffect(() => {
+        props.connectToSocket(() => {});
+    }, []);
 
     return (
         <div className="container-fluid">
