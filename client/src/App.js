@@ -6,14 +6,16 @@ import socketIOClient from "socket.io-client";
 
 const SERVER = "http://127.0.0.1:4001";
 
-export default function App() {
+export default function App(props) {
     const [onlineUsers, setOnlineUsers] = useState(1);
     const [onlineGames, setOnlineGames] = useState(0);
     const [playedGames, setPlayedGames] = useState(0);
     const [availableRooms, setAvailableRooms] = useState([]);
+    const [gameStarted, setGameStarted] = useState(false);
+    const [gameAborted, setGameAborted] = useState(false);
 
     useEffect(() => {
-        const socket = socketIOClient(SERVER);
+        const socket = socketIOClient(SERVER, {query: 'myId=' + props.myId});
         socket.on("online_users", data => {
             setOnlineUsers(data);
         });
@@ -26,6 +28,12 @@ export default function App() {
         socket.on("room_list", data => {
             setAvailableRooms(data);
         });
+        socket.on("game_started", () => {
+            setGameStarted(true);
+        });
+        socket.on("game_aborted", () => {
+            setGameAborted(true);
+        });
 
         return () => socket.disconnect();
     }, []);
@@ -37,9 +45,11 @@ export default function App() {
 
             <Routes>
                 <Route path="/" exact
-                       element={<Homepage server={SERVER} onlineUsers={onlineUsers} onlineGames={onlineGames}
+                       element={<Homepage myId={props.myId} server={SERVER} onlineUsers={onlineUsers}
+                                          onlineGames={onlineGames}
                                           playedGames={playedGames} availableRooms={availableRooms}/>}/>
-                <Route path="/room/:id" element={<Roompage/>}/>
+                <Route path="/room/:id"
+                       element={<Roompage myId={props.myId} started={gameStarted} aborted={gameAborted}/>}/>
             </Routes>
         </div>
     );

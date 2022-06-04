@@ -5,11 +5,16 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import {BrowserRouter} from "react-router-dom";
 
+let myId = sessionStorage.getItem('myId');
+if (myId == null) {
+    myId = Math.random().toString(36).replace(/[^a-z]+/g, '');
+    sessionStorage.setItem('myId', myId);
+}
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
         <BrowserRouter>
-            <App/>
+            <App myId={myId}/>
         </BrowserRouter>
     </React.StrictMode>
 );

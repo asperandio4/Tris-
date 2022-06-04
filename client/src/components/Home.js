@@ -10,7 +10,7 @@ export default function Home(props) {
         axios.post("http://localhost:4001/rooms", room)
             .then(response => {
                 onCancel();
-                axios.post("http://localhost:4001/room/join/" + response.data._id, null)
+                axios.post("http://localhost:4001/room/join/" + response.data._id, {myId: props.myId})
                     .then(r => window.location.href = "/room/" + response.data._id);
             });
     }
@@ -23,7 +23,7 @@ export default function Home(props) {
         <>
             {!addRoom && <button onClick={() => setAddRoom(!addRoom)}>Create room</button>}
             {addRoom && <AddRoom onAdd={onAdd} onCancel={onCancel}/>}
-            <RoomList availableRooms={props.availableRooms}/>
+            <RoomList myId={props.myId} availableRooms={props.availableRooms}/>
         </>
     );
 }

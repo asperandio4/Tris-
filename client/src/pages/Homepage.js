@@ -14,7 +14,7 @@ export default function Homepage(props) {
                 </p>
 
             </div>
-            <Home availableRooms={props.availableRooms}/>
+            <Home myId={props.myId} availableRooms={props.availableRooms}/>
         </div>
     );
 }

@@ -6,7 +6,7 @@ export default function RoomList(props) {
         <div>
             <h3>Available rooms: {props.availableRooms.length}</h3>
             {props.availableRooms.length > 0 && props.availableRooms.map(item => (
-                <RoomBlock key={item._id} room={item}/>))}
+                <RoomBlock key={item._id} room={item} myId={props.myId}/>))}
             {!props.availableRooms.length && <p>No rooms found, create one to start a game!</p>}
         </div>
     );

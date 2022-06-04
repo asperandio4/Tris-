@@ -15,20 +15,20 @@ let updateVisibleRooms = function (client) {
     require("axios")
         .get('http://localhost:4001/rooms').then(res => {
         if (client === null) {
-            clients.forEach(c => c.emit("room_list", res.data));
+            clients.forEach(socket => socket.emit("room_list", res.data));
         } else {
             client.emit("room_list", res.data);
         }
     });
 }
 let updateOnlineUsers = function () {
-    clients.forEach(c => c.emit("online_users", clients.length));
+    clients.forEach(socket => socket.emit("online_users", clients.size));
 }
 let updateOnlineGames = function (client) {
     require("axios")
         .get('http://localhost:4001/rooms/active-count').then(res => {
         if (client === null) {
-            clients.forEach(c => c.emit("online_games", res.data));
+            clients.forEach(socket => socket.emit("online_games", res.data));
         } else {
             client.emit("online_games", res.data);
         }
@@ -38,13 +38,24 @@ let updatePlayedGames = function (client) {
     require("axios")
         .get('http://localhost:4001/rooms/played-count').then(res => {
         if (client === null) {
-            clients.forEach(c => c.emit("played_games", res.data));
+            clients.forEach(socket => socket.emit("played_games", res.data));
         } else {
             client.emit("played_games", res.data);
         }
     });
 }
-let functions = {updateVisibleRooms: updateVisibleRooms, updateOnlineGames: updateOnlineGames};
+let informGameStarted = function (playerId) {
+    clients.get(playerId).emit("game_started");
+}
+let informGameAborted = function (playerId) {
+    clients.get(playerId).emit("game_aborted");
+}
+let functions = {
+    updateVisibleRooms: updateVisibleRooms,
+    updateOnlineGames: updateOnlineGames,
+    informGameStarted: informGameStarted,
+    informGameAborted: informGameAborted,
+};
 routes(app, functions);
 
 const httpServer = require("http").createServer(app);
@@ -52,10 +63,11 @@ const io = new (require("socket.io").Server)(httpServer, {
     cors: corsOpts
 });
 
-let clients = [];
+let clients = new Map;
 io.on("connection", (socket) => {
     console.log("New client connected");
-    clients.push(socket);
+    let id = socket.handshake.query.myId;
+    clients.set(id, socket);
     updateVisibleRooms(socket);
     updateOnlineUsers();
     updateOnlineGames(socket);
@@ -63,10 +75,7 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         console.log("Client disconnected");
-        const index = clients.indexOf(socket);
-        if (index > -1) {
-            clients.splice(index, 1);
-        }
+        clients.delete(id);
         updateOnlineUsers();
     });
 });
