@@ -1,5 +1,3 @@
-const http = require("http");
-const {json} = require("express");
 module.exports = function (app, props) {
     app.route('/').get((req, res) => res.send({response: "I am alive"}).status(200));
 

@@ -6,7 +6,7 @@ export default function RoomBlock(props) {
 
     function handleBtnJoin() {
         axios.post("http://localhost:4001/room/join/" + props.room._id, {myId: props.myId})
-            .then(r => window.location.href = "/room/" + props.room._id);
+            .then(() => window.location.href = "/room/" + props.room._id);
     }
 
     let startingPlayer;
@@ -20,7 +20,7 @@ export default function RoomBlock(props) {
         <div>
             <h3>{props.room.name}</h3>
             <p>Starting player: {startingPlayer}</p>
-            {/*props.room.playerCount == 1 && */<button onClick={handleBtnJoin}>Join!</button>} //TODO uncomment
+            {props.room.playerCount == 1 && <button onClick={handleBtnJoin}>Join!</button>}
         </div>
     );
 }

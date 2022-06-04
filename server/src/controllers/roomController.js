@@ -10,7 +10,7 @@ const CLOSED = 4;
 const ABORTED = 5;
 
 exports.listRooms = function (req, res) {
-    roomModel.find({/*status: NEW*/}, function (err, doc) {  //TODO uncomment
+    roomModel.find({status: NEW}, function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
 }
@@ -77,12 +77,11 @@ exports.updateRoomCount = async function (req, res, playerJoined) {
     }
     return await doc.save().then(savedDoc => {
         handleMongooseResponse(res, null, savedDoc);
-        return updateRoomStatus(savedDoc, playerId);
+        return updateRoomStatus(savedDoc);
     })
 }
 
-function updateRoomStatus(doc, playerId) {
-    console.log(doc);
+function updateRoomStatus(doc) {
     if (doc.playerCount <= 0) {
         doc.status = doc.status == FINISHED ? CLOSED : ABORTED;
         doc.save();

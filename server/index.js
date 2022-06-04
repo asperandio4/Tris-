@@ -9,7 +9,7 @@ const corsOpts = {
 };
 app.options("*", cors(corsOpts));
 app.use(cors(corsOpts));
-const routes = require("./routes/index");
+const routes = require("./src/routes/index");
 
 let updateVisibleRooms = function (client) {
     require("axios")

@@ -11,7 +11,7 @@ export default function Home(props) {
             .then(response => {
                 onCancel();
                 axios.post("http://localhost:4001/room/join/" + response.data._id, {myId: props.myId})
-                    .then(r => window.location.href = "/room/" + response.data._id);
+                    .then(() => window.location.href = "/room/" + response.data._id);
             });
     }
 
