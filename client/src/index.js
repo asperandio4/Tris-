@@ -12,11 +12,9 @@ if (myId == null) {
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <App myId={myId}/>
-        </BrowserRouter>
-    </React.StrictMode>
+    <BrowserRouter>
+        <App myId={myId}/>
+    </BrowserRouter>
 );
 
 // If you want to start measuring performance in your app, pass a function

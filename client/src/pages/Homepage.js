@@ -2,9 +2,10 @@ import React, {useEffect} from "react";
 import Home from "../components/Home";
 
 export default function Homepage(props) {
+    const connectToSocket = props.connectToSocket;
     useEffect(() => {
-        props.connectToSocket(() => {});
-    }, []);
+        connectToSocket(() => {});
+    }, [connectToSocket]);
 
     return (
         <div className="container-fluid">

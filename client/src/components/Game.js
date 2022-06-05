@@ -7,7 +7,7 @@ export default function Game(props) {
     const valuesToPrint = [];
     let row = -1;
     props.values.forEach((v, i) => {
-        if (i % ELEMENTS_PER_ROW == 0) {
+        if (i % ELEMENTS_PER_ROW === 0) {
             row++;
             valuesToPrint[row] = [];
         }
@@ -15,11 +15,11 @@ export default function Game(props) {
     })
 
     function handleBtnMark(i, j, val) {
-        if (props.myTurn && val == 2) {
+        if (props.myTurn && val === 2) {
             let index = i * ELEMENTS_PER_ROW + j;
             axios.post("http://localhost:4001/room/action/" + props.roomId,
                 {myId: props.myId, index: index})
-                .then(() => {});
+                .then();
         }
     }
 
@@ -33,7 +33,7 @@ export default function Game(props) {
                     <tr key={i}>
                         {Object.values(row).map((val, j) => (
                             <td key={i + '' + j}>
-                                <button onClick={() => handleBtnMark(i, j, val)}>{val}</button>
+                                <button onClick={() => handleBtnMark(i, j, val)}>{val === 2 ? '-' : val}</button>
                             </td>
                         ))}
                     </tr>

@@ -45,55 +45,61 @@ let updatePlayedGames = function (client) {
         }
     });
 }
-let informGameStatus = function (room, playerId) {
-    const client = clients.get(playerId);
-    if (client !== undefined) {
-        client.emit("game_full", room.status == RoomConstants.FULL || room.status == RoomConstants.STARTED);
-        client.emit("game_started", room.status == RoomConstants.STARTED);
-        client.emit("game_finished", room.status == RoomConstants.FINISHED);
-        client.emit("game_aborted", room.status == RoomConstants.ABORTED);
-        client.emit("my_name", room.player0 == playerId ? 'player0' : 'player1');
-        client.emit("my_turn", (!room.player && room.player0 == playerId) || (room.player && room.player1 == playerId));
-        client.emit("game_values", room.values);
-        client.emit("game_winner", room.winner);
-        client.emit("game_victory_pos", room.victoryPos);
-    } else {
-        console.log("undefined!");
+let informGameStatus = function (room) {
+    if (room === null) {
+        return;
     }
+    const clientsToInform = [room.player0, room.player1];
+    clientsToInform.forEach(playerId => {
+        const client = clients.get(playerId);
+        if (client !== undefined) {
+            let gameStatus = {
+                myName: room.player0 == playerId ? 'player0' : 'player1',
+                myTurn: (!room.player && room.player0 == playerId) || (room.player && room.player1 == playerId),
+                name: room.name,
+                full: room.status == RoomConstants.FULL,
+                started: room.status == RoomConstants.STARTED,
+                finished: room.status == RoomConstants.FINISHED,
+                closed: room.status == RoomConstants.CLOSED,
+                aborted: room.status == RoomConstants.ABORTED,
+                values: room.values,
+                winner: room.winner,
+                victoryPos: room.victoryPos,
+            }
+            client.emit("game_status", gameStatus);
+        }
+    });
 }
-let informGameFull = function (playerId, full) {
-    const client = clients.get(playerId);
-    if (client !== undefined) {
-        client.emit("game_full", full);
-    } else {
-        console.log("undefined!");
+let newChatMessage = function (room, message) {
+    if (room === null || message === null) {
+        return;
     }
-}
-let informGameStarted = function (playerId, started) {
-    const client = clients.get(playerId);
-    if (client !== undefined) {
-        client.emit("game_started", started);
-    } else {
-        console.log("undefined!");
-    }
-}
-let informGameAborted = function (playerId) {
-    const client = clients.get(playerId);
-    if (client !== undefined) {
-        client.emit("game_aborted", true);
-    } else {
-        console.log("undefined!");
-    }
+    const clientsToInform = [room.player0, room.player1];
+    clientsToInform.forEach(playerId => {
+        const client = clients.get(playerId);
+        if (client !== undefined) {
+            console.log(message.from + " vs " + playerId);
+            client.emit("chat_message", {msg: message.msg, received: message.from !== playerId, timestamp: Date.now()});
+        }
+    });
 }
 let functions = {
     updateVisibleRooms: updateVisibleRooms,
     updateOnlineGames: updateOnlineGames,
     informGameStatus: informGameStatus,
-    informGameFull: informGameFull,
-    informGameStarted: informGameStarted,
-    informGameAborted: informGameAborted,
+    newChatMessage: newChatMessage
 };
 routes(app, functions);
+
+function removeFromRoom(id) {
+    require("axios")
+        .get('http://localhost:4001/rooms/player/' + id).then(res => {
+        res.data.forEach(room => {
+            require("axios")
+                .post('http://localhost:4001/room/leave/' + room._id, {myId: id}).then();
+        })
+    });
+}
 
 const httpServer = require("http").createServer(app);
 const io = new (require("socket.io").Server)(httpServer, {
@@ -114,6 +120,7 @@ io.on("connection", (socket) => {
         console.log("Client disconnected: " + id);
         clients.delete(id);
         updateOnlineUsers();
+        removeFromRoom(id);
     });
 });
 

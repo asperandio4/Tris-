@@ -11,15 +11,18 @@ export default function App(props) {
     const [onlineGames, setOnlineGames] = useState(0);
     const [playedGames, setPlayedGames] = useState(0);
     const [availableRooms, setAvailableRooms] = useState([]);
+    const [gameName, setGameName] = useState('');
     const [gameFull, setGameFull] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
     const [gameFinished, setGameFinished] = useState(false);
+    const [gameClosed, setGameClosed] = useState(false);
     const [gameAborted, setGameAborted] = useState(false);
     const [myName, setMyName] = useState('');
     const [myTurn, setMyTurn] = useState(false);
     const [gameValues, setGameValues] = useState([]);
     const [gameWinner, setGameWinner] = useState('');
     const [gameVictoryPos, setGameVictoryPos] = useState('');
+    const [chatMessages, setChatMessages] = useState([]);
 
     const connectToSocket = useCallback(callback => {
         const socket = socketIOClient(SERVER, {query: 'myId=' + props.myId});
@@ -35,50 +38,42 @@ export default function App(props) {
         socket.on("room_list", data => {
             setAvailableRooms(data);
         });
-        socket.on("game_full", data => {
-            setGameFull(data);
+        socket.on("game_status", data => {
+            setMyName(data.myName);
+            setMyTurn(data.myTurn);
+            setGameName(data.name);
+            setGameFull(data.full);
+            setGameStarted(data.started);
+            setGameFinished(data.finished);
+            setGameClosed(data.closed);
+            setGameAborted(data.aborted);
+            setGameValues(data.values);
+            setGameWinner(data.winner);
+            setGameVictoryPos(data.victoryPos);
         });
-        socket.on("game_started", data => {
-            setGameStarted(data);
-        });
-        socket.on("game_finished", data => {
-            setGameFinished(data);
-        });
-        socket.on("game_aborted", data => {
-            setGameAborted(data);
-        });
-        socket.on("my_name", data => {
-            setMyName(data);
-        });
-        socket.on("my_turn", data => {
-            setMyTurn(data);
-        });
-        socket.on("game_values", data => {
-            setGameValues(data);
-        });
-        socket.on("game_winner", data => {
-            setGameWinner(data);
-        });
-        socket.on("game_victory_pos", data => {
-            setGameVictoryPos(data);
+        socket.on('chat_message', message => {
+            setChatMessages(chatMessages => [...chatMessages, message]);
         });
         socket.on('connect', callback);
 
         return () => socket.disconnect();
-    }, []);
+    }, [props.myId]);
 
-    //TODO to call
-    function resetGame() {
+    //TODO to call?
+    /*function resetGame() {
+        setGameName('');
         setGameFull(false);
         setGameStarted(false);
         setGameFinished(false);
+        setGameClosed(false);
         setGameAborted(false);
         setMyName('');
         setMyTurn(false);
         setGameValues([]);
         setGameWinner('');
         setGameVictoryPos('');
-    }
+        setChatMessages([]);
+    }*/
 
     return (
         <div className="container-fluid">
@@ -90,10 +85,11 @@ export default function App(props) {
                                           onlineGames={onlineGames}
                                           playedGames={playedGames} availableRooms={availableRooms}/>}/>
                 <Route path="/room/:id"
-                       element={<Roompage myId={props.myId} connectToSocket={connectToSocket} full={gameFull}
-                                          started={gameStarted} finished={gameFinished}
+                       element={<Roompage myId={props.myId} connectToSocket={connectToSocket} name={gameName}
+                                          full={gameFull}
+                                          started={gameStarted} finished={gameFinished} closed={gameClosed}
                                           aborted={gameAborted} myName={myName} myTurn={myTurn} values={gameValues}
-                                          winner={gameWinner} victoryPos={gameVictoryPos}/>}/>
+                                          winner={gameWinner} victoryPos={gameVictoryPos} chat={chatMessages}/>}/>
             </Routes>
         </div>
     );
