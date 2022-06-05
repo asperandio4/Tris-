@@ -1,4 +1,3 @@
-const roomController = require("../controllers/roomController");
 module.exports = function (app, props) {
     app.route('/').get((req, res) => res.send({response: "I am alive"}).status(200));
 
@@ -38,6 +37,12 @@ module.exports = function (app, props) {
     app.route('/room/start/:id')
         .post((req, res) => {
             roomController.startGame(req, res).then(room => {
+                props.informGameStatus(room);
+            });
+        });
+    app.route('/room/rematch/:id')
+        .post((req, res) => {
+            roomController.rematchGame(req, res).then(room => {
                 props.informGameStatus(room);
             });
         });

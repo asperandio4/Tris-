@@ -5,16 +5,21 @@ mongoose.connect('mongodb://localhost:27017/tris');
 const roomModel = require('../models/roomModel')(mongoose);
 
 exports.listRooms = function (req, res) {
-    roomModel.find({status: RoomConstants.NEW}, function (err, doc) {
-        handleMongooseResponse(res, err, doc);
-    })
+    exports.listRoomsInternal((err, doc) => handleMongooseResponse(res, err, doc));
+}
+exports.listRoomsInternal = function (callback) {
+    return roomModel.find({status: RoomConstants.NEW}, function (err, doc) {
+        callback(err, doc);
+    });
 }
 
 exports.getRoomsByPlayer = function (req, res) {
-    let playerToFind = req.params.id;
+    exports.getRoomsByPlayerInternal(req.params.id, (err, doc) => handleMongooseResponse(res, err, doc));
+}
+exports.getRoomsByPlayerInternal = function (playerToFind, callback) {
     roomModel.find({$or: [{player0: playerToFind}, {player1: playerToFind}]}, function (err, doc) {
-        handleMongooseResponse(res, err, doc);
-    })
+        callback(err, doc);
+    });
 }
 
 exports.getRoom = async function (req, res, returnRoom) {
@@ -32,12 +37,14 @@ exports.getRoom = async function (req, res, returnRoom) {
 
 exports.addRoom = function (req, res) {
     req.body.status = RoomConstants.NEW;
+    req.body.startingPlayer = req.body.player;
     req.body.playerCount = 0;
     req.body.player0 = '';
     req.body.player1 = '';
     req.body.values = Array(RoomConstants.SPOTS).fill(RoomConstants.UNSET);
     req.body.winner = '';
     req.body.victoryPos = '';
+    req.body.matchNum = 0;
     new roomModel(req.body).save(function (err, doc) {
         handleMongooseResponse(res, err, doc);
     })
@@ -57,29 +64,66 @@ exports.startGame = async function (req, res) {
     })
 }
 
-exports.countActiveRooms = function (req, res) {
-    roomModel.count({status: {$in: [RoomConstants.FULL, RoomConstants.STARTED, RoomConstants.FINISHED]}}, function (err, doc) {
-        handleMongooseResponse(res, err, doc);
+exports.rematchGame = async function (req, res) {
+    const id = req.params.id;
+    const doc = await roomModel.findById(id);
+    if (doc === null) {  // Can happen for non-existing rooms
+        return null;
+    }
+
+    // Save the previous game for statistics, it has a new _id
+    doc.status = RoomConstants.CLOSED;
+    let obj = doc.toObject();
+    delete obj._id;
+    const docClone = new roomModel(obj);
+    docClone.save();
+
+    // Overwrite the current game, version number increases
+    doc.player = doc.startingPlayer;  // switch players
+    const temp = doc.player0;
+    doc.player0 = doc.player1;
+    doc.player1 = temp;
+    doc.status = RoomConstants.STARTED;
+    doc.values = Array(RoomConstants.SPOTS).fill(RoomConstants.UNSET);
+    doc.winner = '';
+    doc.victoryPos = '';
+    doc.matchNum = doc.matchNum + 1;
+    return await doc.save().then(savedDoc => {
+        handleMongooseResponse(res, null, savedDoc);
+        return savedDoc;
     })
+}
+
+exports.countActiveRooms = function (req, res) {
+    exports.listRoomsInternal((err, doc) => handleMongooseResponse(res, err, doc));
+}
+exports.countActiveRoomsInternal = function (callback) {
+    roomModel.count({status: {$in: [RoomConstants.FULL, RoomConstants.STARTED, RoomConstants.FINISHED]}}, function (err, doc) {
+        callback(err, doc);
+    });
 }
 
 exports.countPlayedGames = function (req, res) {
+    exports.countPlayedGamesInternal((err, doc) => handleMongooseResponse(res, err, doc));
+}
+exports.countPlayedGamesInternal = function (callback) {
     roomModel.count({status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}, function (err, doc) {
-        handleMongooseResponse(res, err, doc);
-    })
+        callback(err, doc);
+    });
 }
 
 exports.updateRoomCount = async function (req, res, playerJoined) {
-    const id = req.params.id;
-    const playerId = req.body.myId;
+    return await exports.updateRoomCountInternal(req.params.id, req.body.myId, playerJoined, (err, doc) => handleMongooseResponse(res, err, doc));
+}
+exports.updateRoomCountInternal = async function (id, playerId, playerJoined, callback) {
     const doc = await roomModel.findById(id);
     if (doc === null) {  // Can happen for non-existing rooms
         return null;
     }
 
     if (playerJoined) {
-        // Avoid rejoin if already inside
-        if (doc.player0 !== playerId && doc.player1 !== playerId) {
+        // Avoid rejoin if already inside or if there is no more room in the room - can happen on refresh
+        if (doc.player0 !== playerId && doc.player1 !== playerId && (doc.player0 === '' || doc.player1 === '')) {
             doc.playerCount++;
             if (doc.player0 !== '') {
                 doc.player1 = playerId;
@@ -88,15 +132,18 @@ exports.updateRoomCount = async function (req, res, playerJoined) {
             }
         }
     } else {
-        doc.playerCount--;
-        if (doc.player0 === playerId) {
-            doc.player0 = '';
-        } else {
-            doc.player1 = '';
+        // Avoid removing if not inside - can happen on last user Leave
+        if (doc.player0 === playerId || doc.player1 === playerId) {
+            doc.playerCount--;
+            if (doc.player0 === playerId) {
+                doc.player0 = '';
+            } else {
+                doc.player1 = '';
+            }
         }
     }
     return await doc.save().then(savedDoc => {
-        handleMongooseResponse(res, null, savedDoc);
+        callback(null, savedDoc);
         return updateRoomStatus(savedDoc);
     })
 }

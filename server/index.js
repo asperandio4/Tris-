@@ -5,20 +5,21 @@ app.use(express.json());
 const cors = require("cors");
 const corsOpts = {
     origin: 'http://localhost:3000',
-    methods: ["GET", "POST"/*, "PUT"*/],
+    methods: ["GET", "POST"],
 };
 app.options("*", cors(corsOpts));
 app.use(cors(corsOpts));
 const routes = require("./src/routes/index");
 const RoomConstants = require("./src/models/roomConstants").RoomConstants;
+const RoomController = require("./src/controllers/roomController");
 
 let updateVisibleRooms = function (client) {
-    require("axios")
-        .get('http://localhost:4001/rooms').then(res => {
+    RoomController.listRoomsInternal((err, doc) => {
+        const visibleRooms = err ? [] : doc;
         if (client === null) {
-            clients.forEach(socket => socket.emit("room_list", res.data));
+            clients.forEach(socket => socket.emit("room_list", visibleRooms));
         } else {
-            client.emit("room_list", res.data);
+            client.emit("room_list", visibleRooms);
         }
     });
 }
@@ -26,22 +27,22 @@ let updateOnlineUsers = function () {
     clients.forEach(socket => socket.emit("online_users", clients.size));
 }
 let updateOnlineGames = function (client) {
-    require("axios")
-        .get('http://localhost:4001/rooms/active-count').then(res => {
+    RoomController.countActiveRoomsInternal((err, doc) => {
+        const onlineGames = err ? 0 : doc;
         if (client === null) {
-            clients.forEach(socket => socket.emit("online_games", res.data));
+            clients.forEach(socket => socket.emit("online_games", onlineGames));
         } else {
-            client.emit("online_games", res.data);
+            client.emit("online_games", onlineGames);
         }
     });
 }
 let updatePlayedGames = function (client) {
-    require("axios")
-        .get('http://localhost:4001/rooms/played-count').then(res => {
+    RoomController.countPlayedGamesInternal((err, doc) => {
+        const playedGames = err ? 0 : doc;
         if (client === null) {
-            clients.forEach(socket => socket.emit("played_games", res.data));
+            clients.forEach(socket => socket.emit("played_games", playedGames));
         } else {
-            client.emit("played_games", res.data);
+            client.emit("played_games", playedGames);
         }
     });
 }
@@ -78,7 +79,6 @@ let newChatMessage = function (room, message) {
     clientsToInform.forEach(playerId => {
         const client = clients.get(playerId);
         if (client !== undefined) {
-            console.log(message.from + " vs " + playerId);
             client.emit("chat_message", {msg: message.msg, received: message.from !== playerId, timestamp: Date.now()});
         }
     });
@@ -92,11 +92,13 @@ let functions = {
 routes(app, functions);
 
 function removeFromRoom(id) {
-    require("axios")
-        .get('http://localhost:4001/rooms/player/' + id).then(res => {
-        res.data.forEach(room => {
-            require("axios")
-                .post('http://localhost:4001/room/leave/' + room._id, {myId: id}).then();
+    RoomController.getRoomsByPlayerInternal(id, (err, doc) => {
+        const roomsByPlayer = err ? [] : doc;
+        roomsByPlayer.forEach(room => {
+            RoomController.updateRoomCountInternal(room._id, id, false, () => {}).then();
+            updateVisibleRooms(null);
+            updateOnlineGames(null)
+            informGameStatus(room);
         })
     });
 }

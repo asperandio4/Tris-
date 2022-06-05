@@ -26,7 +26,6 @@ export default function Game(props) {
     return (
         <>
             {props.myTurn && <p>It's your turn!</p>}
-            {props.game}
             <table>
                 <tbody>
                 {valuesToPrint.map((row, i) => (

@@ -31,7 +31,8 @@ export default function Roompage(props) {
     }
 
     function handleBtnRematch() {
-        //TODO
+        axios.post("http://localhost:4001/room/rematch/" + id, {myId: props.myId})
+            .then();
     }
 
     function onSendMsg(msg) {

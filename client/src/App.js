@@ -59,22 +59,6 @@ export default function App(props) {
         return () => socket.disconnect();
     }, [props.myId]);
 
-    //TODO to call?
-    /*function resetGame() {
-        setGameName('');
-        setGameFull(false);
-        setGameStarted(false);
-        setGameFinished(false);
-        setGameClosed(false);
-        setGameAborted(false);
-        setMyName('');
-        setMyTurn(false);
-        setGameValues([]);
-        setGameWinner('');
-        setGameVictoryPos('');
-        setChatMessages([]);
-    }*/
-
     return (
         <div className="container-fluid">
             <h1>Tris!</h1>

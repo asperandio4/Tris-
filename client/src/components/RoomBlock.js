@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function RoomBlock(props) {
-    const ME = 0;
+    const ME = false;
 
     function handleBtnJoin() {
         window.location.href = "/room/" + props.room._id;
@@ -9,7 +9,7 @@ export default function RoomBlock(props) {
 
     function getStartingPlayer() {
         let startingPlayer;
-        if (parseInt(props.room.player) === ME) {
+        if (props.room.player === ME) {
             startingPlayer = props.room.player0 !== '' ? 'Opponent' : 'Me';
         } else {
             startingPlayer = props.room.player0 !== '' ? 'Me' : 'Opponent';
