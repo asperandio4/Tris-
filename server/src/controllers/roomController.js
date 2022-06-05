@@ -176,6 +176,115 @@ exports.actionGame = async function (req, res) {
     })
 }
 
+exports.getStats = async function (req, res) {
+    let stats = {};
+    //Played games
+    const playedGames = await roomModel.count({status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}});
+    stats.playedGames = playedGames ? playedGames : 0;
+
+    //Aborted games
+    const abortedGames = await roomModel.count({status: RoomConstants.ABORTED});
+    stats.abortedGames = abortedGames ? abortedGames : 0;
+
+    //Mean moves per game
+    const meanMoves = await roomModel.aggregate([
+        {$match: {status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}},  //only finished or closed games
+        {$project: {values: 1}},  //get values
+        {$unwind: "$values"},
+        {$match: {"values": {$ne: RoomConstants.UNSET}}},  // exclude unset values
+        {
+            $group: {
+                _id: "$_id",
+                count: {$sum: 1}  //number of moves per match
+            }
+        },
+        {
+            $group: {
+                _id: "mean",
+                mean: {$avg: "$count"}  //avg moves per match
+            }
+        },
+    ]);
+    stats.meanMoves = meanMoves ? meanMoves[0].mean : 0;
+
+    //Most winning player (starter vs opponent)
+    const winningPlayer = await roomModel.aggregate([
+        {$match: {$and: [{status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}, {winner: {$ne: ''}}]}}, //only finished or closed games with a winner
+        {
+            $project: {
+                startingPlayer: 1,
+                winner: 1,
+                playerWinner: {
+                    $cond: [  //determines the winning player
+                        {
+                            $or: [
+                                {$and: [{$eq: ["$startingPlayer", false]}, {$eq: ["$winner", "player0"]}]},
+                                {$and: [{$eq: ["$startingPlayer", true]}, {$eq: ["$winner", "player1"]}]}
+                            ]
+                        },
+                        "starter", "opponent"
+                    ]
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$playerWinner",
+                count: {$sum: 1}  //counts the victories per winning player
+            }
+        },
+    ]);
+    stats.winningPlayer = {starter: 0, opponent: 0};
+    if (winningPlayer) {
+        winningPlayer.forEach(player => {
+            if (player._id === "starter") {
+                stats.winningPlayer.starter = player.count;
+            } else {
+                stats.winningPlayer.opponent = player.count;
+            }
+        })
+    }
+
+    //Most used victory position
+    const victoryPosition = await roomModel.aggregate([
+        {$match: {$and: [{status: {$in: [3, 4]}}, {victoryPos: {$ne: ''}}]}},
+        {$project: {victoryPos: 1}},
+        {$sortByCount: "$victoryPos"},
+        {$limit: 1},
+        {$project: {_id: 1}},
+    ]);
+    stats.victoryPosition = victoryPosition ? victoryPosition[0]._id : '';
+
+    //Mean number of rematches
+    const meanRematches = await roomModel.aggregate([
+        {$match: {status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}},  //only finished or closed games
+        {$project: {matchNum: 1}},  //get match number
+        {
+            $group: {
+                _id: "$matchNum",
+                count: {$sum: 1}  //number of match numbers
+            }
+        },
+        {$sort: {"_id": 1}}
+    ]);
+    if (meanRematches) {
+        // Sum real number of rematches
+        let meanRematchesPerGame = 0;
+        for (let i = 0; i < meanRematches.length - 1; i++) {
+            meanRematches[i].count -= meanRematches[i + 1].count;  //don't consider rematches that have rematches
+            meanRematchesPerGame += i * meanRematches[i].count;
+        }
+        meanRematchesPerGame += (meanRematches.length - 1) * meanRematches[meanRematches.length - 1].count;
+        // Calculates the mean
+        meanRematchesPerGame /= meanRematches.reduce((acc, elem) => acc + parseInt(elem.count), 0);
+        stats.meanRematches = meanRematchesPerGame;
+    } else {
+        stats.meanRematches = 0;
+    }
+
+    res.json(stats);
+}
+
 function updateRoomStatus(doc) {
     let newStatus = doc.status;
     if (doc.playerCount <= 0) {
@@ -219,7 +328,7 @@ function checkForGameEnd(doc) {
             if (values[i * valuesPerRow + j] == lastValue) {
                 if (j == valuesPerRow - 1) {
                     victory = true;
-                    victoryPos = 'r' + i;
+                    victoryPos = 'Row ' + (i + 1);
                 }
             } else {
                 break;
@@ -237,7 +346,7 @@ function checkForGameEnd(doc) {
             if (values[i + j * valuesPerRow] == lastValue) {
                 if (j == valuesPerRow - 1) {
                     victory = true;
-                    victoryPos = 'c' + i;
+                    victoryPos = 'Column ' + (i + 1);
                 }
             } else {
                 break;
@@ -252,7 +361,7 @@ function checkForGameEnd(doc) {
             if (values[i * (valuesPerRow + 1)] == lastValue) {
                 if (i == valuesPerRow - 1) {
                     victory = true;
-                    victoryPos = 'd0';
+                    victoryPos = 'Main Diagonal';
                 }
             } else {
                 break;
@@ -267,7 +376,7 @@ function checkForGameEnd(doc) {
             if (values[i * (valuesPerRow - 1)] == lastValue) {
                 if (i == valuesPerRow) {
                     victory = true;
-                    victoryPos = 'd1';
+                    victoryPos = 'Secondary Diagonal';
                 }
             } else {
                 break;

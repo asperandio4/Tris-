@@ -58,4 +58,6 @@ module.exports = function (app, props) {
                 props.newChatMessage(room, {msg: req.body.msg, from: req.body.from});
             });
         });
+    app.route('/stats')
+        .get(roomController.getStats)
 };

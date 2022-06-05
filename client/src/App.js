@@ -1,6 +1,7 @@
 import Homepage from "./pages/Homepage";
-import {Route, Routes} from "react-router-dom";
 import Roompage from "./pages/Roompage";
+import Statspage from "./pages/Statspage";
+import {Route, Routes} from "react-router-dom";
 import React, {useCallback, useState} from "react";
 import socketIOClient from "socket.io-client";
 
@@ -74,6 +75,8 @@ export default function App(props) {
                                           started={gameStarted} finished={gameFinished} closed={gameClosed}
                                           aborted={gameAborted} myName={myName} myTurn={myTurn} values={gameValues}
                                           winner={gameWinner} victoryPos={gameVictoryPos} chat={chatMessages}/>}/>
+                <Route path="/stats"
+                       element={<Statspage/>}/>
             </Routes>
         </div>
     );

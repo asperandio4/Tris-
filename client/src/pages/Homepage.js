@@ -7,8 +7,13 @@ export default function Homepage(props) {
         connectToSocket(() => {});
     }, [connectToSocket]);
 
+    function handleBtnStats() {
+        window.location.href = "/stats";
+    }
+
     return (
         <div className="container-fluid">
+            <button onClick={handleBtnStats}>Stats</button>
             <h2>Homepage</h2>
             <div id="info">
                 <p>
