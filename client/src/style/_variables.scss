@@ -1,0 +1,25 @@
+$lightGrey: #d2d4d2;
+$grey: #434B59;
+$white: #FFFFFF;
+$black: #000000;
+$anchor: #03a1fc;
+$anchorHover: #0080c9;
+$buttonHover: #f0f0f0;
+$buttonCancel: #ffA4A4;
+$buttonCancelHover: #ff5252;
+$buttonStart: #72f27b;
+$buttonStartHover: #45ff52;
+
+$actionBarMsg: #9a00c4;
+$myTurn: $anchorHover;
+$opponentTurn: #deab02;
+$winningPos: rgba(255, 242, 0, 0.9);
+
+$popupBackground: rgba(0, 0, 0, 0.75);
+
+$playerOImg: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTkiIHN0cm9rZT0iIzAwODBDOSIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg==");
+$player1Img: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQiIGhlaWdodD0iNDIiIHZpZXdCb3g9IjAgMCA0NCA0MiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGxpbmUgeDE9IjIuNzA3MTEiIHkxPSIxLjI5Mjg5IiB4Mj0iNDIuNzA3MSIgeTI9IjQxLjI5MjkiIHN0cm9rZT0iI0ZGNTI1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxsaW5lIHgxPSIxLjI5Mjg5IiB5MT0iNDEuMjkyOSIgeDI9IjQxLjI5MjkiIHkyPSIxLjI5Mjg5IiBzdHJva2U9IiNGRjUyNTIiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4=");
+$players: (player0: $playerOImg, player1: $player1Img);
+
+$msgReceived: #ceedd7;
+$msgSent: #4cd9a7;

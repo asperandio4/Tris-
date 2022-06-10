@@ -1,0 +1,21 @@
+@import "../components/Home";
+
+#homepage #info {
+  margin-bottom: 15px;
+
+  .mobile {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  #homepage #info {
+    .desktop {
+      display: none;
+    }
+
+    .mobile {
+      display: block;
+    }
+  }
+}

@@ -1,9 +1,12 @@
 import Homepage from "./pages/Homepage";
 import Roompage from "./pages/Roompage";
 import Statspage from "./pages/Statspage";
+import RoomFullpage from "./pages/RoomFullpage";
+import NotFoundpage from "./pages/NotFoundpage";
 import {Route, Routes} from "react-router-dom";
 import React, {useCallback, useState} from "react";
 import socketIOClient from "socket.io-client";
+import "./style/App.css";
 
 const SERVER = "http://127.0.0.1:4001";
 
@@ -61,8 +64,11 @@ export default function App(props) {
     }, [props.myId]);
 
     return (
-        <div className="container-fluid">
-            <h1>Tris!</h1>
+        <div className="container960">
+            <header>
+                <a href="/" id="logo_home_link"><img src="/logo512.png" alt="Tris!"/></a>
+                <h1>Tris!</h1>
+            </header>
 
             <Routes>
                 <Route path="/" exact
@@ -77,7 +83,15 @@ export default function App(props) {
                                           winner={gameWinner} victoryPos={gameVictoryPos} chat={chatMessages}/>}/>
                 <Route path="/stats"
                        element={<Statspage/>}/>
+
+                <Route path="room-full" element={<RoomFullpage/>}/>
+                <Route path="not-found" element={<NotFoundpage/>}/>
+                <Route path="*" element={<NotFoundpage/>}/>
             </Routes>
+
+            <footer>
+                <p>Developed by: Andrea Sperandio</p>
+            </footer>
         </div>
     );
 }

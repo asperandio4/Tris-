@@ -7,18 +7,16 @@ export default function Homepage(props) {
         connectToSocket(() => {});
     }, [connectToSocket]);
 
-    function handleBtnStats() {
-        window.location.href = "/stats";
-    }
-
     return (
-        <div className="container-fluid">
-            <button onClick={handleBtnStats}>Stats</button>
+        <div id={"homepage"} className={"page"}>
+            <div className={"nav"}>View: <a href="/stats">Stats</a></div>
+
             <h2>Homepage</h2>
             <div id="info">
                 <p>
                     <span>Online users: <strong>{props.onlineUsers}</strong></span>&nbsp;|&nbsp;
-                    <span>Online games: <strong>{props.onlineGames}</strong></span>&nbsp;|&nbsp;
+                    <span>Online games: <strong>{props.onlineGames}</strong></span>
+                    <span className={"desktop"}>&nbsp;|&nbsp;</span><br className={"mobile"}/>
                     <span>Played games: <strong>{props.playedGames}</strong></span>
                 </p>
 

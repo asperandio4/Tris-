@@ -1,0 +1,68 @@
+@use '../variables' as v;
+
+$players: (player0: v.$playerOImg, player1: v.$player1Img);
+
+#game {
+  p {
+    &.myTurn {
+      color: v.$myTurn;
+    }
+
+    &.opponentTurn {
+      color: v.$opponentTurn;
+    }
+  }
+
+  table {
+    margin-top: 20px;
+    border-collapse: collapse;
+    border-style: hidden;
+
+    td {
+      border: 2px solid v.$grey;
+
+      button {
+        $btnSize: 50px;
+        $iconSize: $btnSize - 10px;
+        width: $btnSize;
+        height: $btnSize;
+        border: none;
+        cursor: auto;
+
+        &.highlighted {
+          background-color: v.$winningPos;
+        }
+
+        @each $player, $img in v.$players {
+          &.#{$player} {
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: $iconSize $iconSize;
+            background-image: #{$img};
+          }
+        }
+      }
+    }
+
+    @each $player, $img in v.$players {
+      &.#{$player} button.empty {
+        cursor: #{$img} 20 20, auto;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 767px) {
+  #game table td button {
+    $btnSize: 40px;
+    $iconSize: $btnSize - 10px;
+    width: $btnSize;
+    height: $btnSize;
+
+    @each $player, $img in v.$players {
+      &.#{$player} {
+        background-size: $iconSize $iconSize;
+      }
+    }
+  }
+}

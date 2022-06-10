@@ -95,10 +95,11 @@ function removeFromRoom(id) {
     RoomController.getRoomsByPlayerInternal(id, (err, doc) => {
         const roomsByPlayer = err ? [] : doc;
         roomsByPlayer.forEach(room => {
-            RoomController.updateRoomCountInternal(room._id, id, false, () => {}).then();
-            updateVisibleRooms(null);
-            updateOnlineGames(null)
-            informGameStatus(room);
+            RoomController.updateRoomCountInternal(room._id, id, false, () => {}).then(room => {
+                updateVisibleRooms(null);
+                updateOnlineGames(null)
+                informGameStatus(room);
+            });
         })
     });
 }

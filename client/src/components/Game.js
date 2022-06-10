@@ -15,7 +15,7 @@ export default function Game(props) {
     })
 
     function handleBtnMark(i, j, val) {
-        if (props.myTurn && val === 2) {
+        if (props.started && !props.finished && props.myTurn && val === 2) {
             let index = i * ELEMENTS_PER_ROW + j;
             axios.post("http://localhost:4001/room/action/" + props.roomId,
                 {myId: props.myId, index: index})
@@ -23,22 +23,44 @@ export default function Game(props) {
         }
     }
 
+    function determineIfWinningPos(i, j) {
+        const row = 'Row ';
+        const column = 'Column ';
+        const mainDiag = 'Main Diagonal';
+        const secondDiag = 'Secondary Diagonal';
+
+        if (props.victoryPos.startsWith(row)) {
+            return i + 1 === parseInt(props.victoryPos.substring(row.length));  // 1 based
+        } else if (props.victoryPos.startsWith(column)) {
+            return j + 1 === parseInt(props.victoryPos.substring(column.length));  // 1 based
+        } else if (props.victoryPos === mainDiag) {
+            return i === j;
+        } else if (props.victoryPos === secondDiag) {
+            return i + j === ELEMENTS_PER_ROW - 1;
+        }
+    }
+
     return (
-        <>
-            {props.myTurn && <p>It's your turn!</p>}
-            <table>
+        <div id={"game"}>
+            {props.started && !props.finished &&
+                (props.myTurn ? <p className={"myTurn"}>It's your turn!</p> :
+                    <p className={"opponentTurn"}>It's the opponent's turn!</p>)
+            }
+
+            <table className={props.started && props.myTurn && !props.finished ? props.myName : ''}>
                 <tbody>
                 {valuesToPrint.map((row, i) => (
                     <tr key={i}>
                         {Object.values(row).map((val, j) => (
                             <td key={i + '' + j}>
-                                <button onClick={() => handleBtnMark(i, j, val)}>{val === 2 ? '-' : val}</button>
+                                <button onClick={() => handleBtnMark(i, j, val)}
+                                        className={val === 2 ? 'empty' : ('player' + val) + (determineIfWinningPos(i, j) ? ' highlighted' : '')}></button>
                             </td>
                         ))}
                     </tr>
                 ))}
                 </tbody>
             </table>
-        </>
+        </div>
     );
 }

@@ -1,5 +1,5 @@
 import {useParams} from 'react-router-dom';
-import React, {useEffect} from "react";
+import React, {useCallback, useEffect} from "react";
 import axios from "axios";
 import Game from "../components/Game";
 import Chat from "../components/Chat";
@@ -12,18 +12,31 @@ export default function Roompage(props) {
     useEffect(() => {
         connectToSocket(() => {
             axios.post("http://localhost:4001/room/join/" + id, {myId: myId})
-                .then();
-        })
+                .then(response => {
+                    if (response.data === "roomNotFound") {
+                        window.location.href = "/not-found";
+                    } else if (response.data === "roomFull") {
+                        window.location.href = "/room-full";
+                    }
+                });
+        });
     }, [connectToSocket, myId, id]);
 
-    function handleBtnHome() {
+    const handleBtnHome = useCallback(() => {
         if (props.started && !props.finished && !props.aborted && !window.confirm("Are you sure you want to leave mid-game?")) {
             return;
         }
 
-        axios.post("http://localhost:4001/room/leave/" + id, {myId: props.myId}).then();
         window.location.href = "/";
-    }
+    }, [props.started, props.finished, props.aborted]);
+
+    useEffect(() => {
+        document.getElementById("logo_home_link").onclick = function (e) {
+            e.preventDefault();
+            handleBtnHome();
+        };
+    }, [handleBtnHome]);
+
 
     function handleBtnStart() {
         axios.post("http://localhost:4001/room/start/" + id, {myId: props.myId})
@@ -41,24 +54,38 @@ export default function Roompage(props) {
     }
 
     return (
-        <div className="container-fluid">
-            <button onClick={handleBtnHome}>Leave</button>
-            {props.full && !props.started && <button onClick={handleBtnStart}>Start</button>}
-            {props.finished && <p>Game over!</p>}
-            {props.finished && !props.closed && <button onClick={handleBtnRematch}>Rematch</button>}
-            {props.winner !== '' && <p>Winner: {props.winner}</p>}
-            {props.victoryPos !== '' && <p>Victory position: {props.victoryPos}</p>}
-            {props.aborted && <p>This game was cancelled!</p>}
+        <div id={"roompage"} className={"page"}>
+            <button onClick={handleBtnHome} className={"cancel"}>Leave</button>
 
             <h2>Room {props.name}</h2>
-            <h3>Player {props.myName.replace('player', '')} - Sign {props.myName === 'player0' ? 'O' : 'X'}</h3>
+            <h3>Player {props.myName.replace('player', '')} - Sign <span className={props.myName}></span></h3>
 
-            {(props.started || props.finished || props.closed) && !props.aborted &&
-                <Game myId={props.myId} roomId={id}
-                      myTurn={props.myTurn && !props.finished && !props.closed && !props.aborted}
-                      values={props.values}/>}
+            <div className="columnContainer">
+                <div className="columnLeft">
+                    <div className="actionBar">
+                        {!props.full && !props.started && !props.finished && !props.closed && !props.aborted &&
+                            <p>Waiting for an opponent!</p>}
+                        {props.full && !props.started &&
+                            <button onClick={handleBtnStart} className={"start"}>Start</button>}
+                        {(props.finished || props.closed) && props.winner === '' &&
+                            <p>Game over: there is no winning!</p>}
+                        {props.winner !== '' && <p>{props.winner === props.myName ? "You won! :D" : "You lost :/"}</p>}
+                        {props.finished && !props.closed &&
+                            <button onClick={handleBtnRematch} className={"rematch"}>Rematch</button>}
+                        {props.aborted && <p>This game was cancelled!</p>}
+                    </div>
 
-            <Chat chat={props.chat} onSendMsg={onSendMsg}/>
+
+                    <Game myId={props.myId} roomId={id}
+                          myTurn={props.myTurn}
+                          values={props.values} myName={props.myName} victoryPos={props.victoryPos}
+                          started={props.started}
+                          finished={props.finished || props.closed || props.aborted}/>
+                </div>
+                <div className="columnRight">
+                    <Chat chat={props.chat} onSendMsg={onSendMsg}/>
+                </div>
+            </div>
         </div>
     );
 }

@@ -1,0 +1,23 @@
+.roomBlock {
+  padding-left: 20px;
+
+  p {
+    font-size: 14px;
+    line-height: 14px;
+    margin-bottom: 5px;
+  }
+
+  button {
+    padding: 4px 10px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .roomBlock {
+    padding-left: 10px;
+
+    p {
+      font-size: 12px;
+    }
+  }
+}

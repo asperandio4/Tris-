@@ -27,8 +27,8 @@ export default function Statspage() {
     }
 
     return (
-        <div className="container-fluid">
-            <button onClick={handleBtnHome}>Home</button>
+        <div id={"statspage"} className={"page"}>
+            <div className={"nav"}>View: <a href="/">Home</a></div>
             <h2>Stats</h2>
 
             <span>Played games: <strong>{playedGames}</strong></span><br/>

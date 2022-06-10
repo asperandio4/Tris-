@@ -24,11 +24,7 @@ exports.getRoomsByPlayerInternal = function (playerToFind, callback) {
 
 exports.getRoom = async function (req, res, returnRoom) {
     const id = req.params.id;
-    const doc = await roomModel.findById(id);
-    if (doc === null) {  // Can happen for non-existing rooms
-        return null;
-    }
-
+    const doc = await findById(id);
     handleMongooseResponse(res, null, doc);
     if (returnRoom) {
         return doc;
@@ -52,8 +48,9 @@ exports.addRoom = function (req, res) {
 
 exports.startGame = async function (req, res) {
     const id = req.params.id;
-    const doc = await roomModel.findById(id);
+    const doc = await findById(id);
     if (doc === null) {  // Can happen for non-existing rooms
+        handleMongooseResponse(res, "roomNotFound", null);
         return null;
     }
 
@@ -66,8 +63,9 @@ exports.startGame = async function (req, res) {
 
 exports.rematchGame = async function (req, res) {
     const id = req.params.id;
-    const doc = await roomModel.findById(id);
+    const doc = await findById(id);
     if (doc === null) {  // Can happen for non-existing rooms
+        handleMongooseResponse(res, "roomNotFound", null);
         return null;
     }
 
@@ -116,8 +114,9 @@ exports.updateRoomCount = async function (req, res, playerJoined) {
     return await exports.updateRoomCountInternal(req.params.id, req.body.myId, playerJoined, (err, doc) => handleMongooseResponse(res, err, doc));
 }
 exports.updateRoomCountInternal = async function (id, playerId, playerJoined, callback) {
-    const doc = await roomModel.findById(id);
+    const doc = await findById(id);
     if (doc === null) {  // Can happen for non-existing rooms
+        callback("roomNotFound", null);
         return null;
     }
 
@@ -130,6 +129,9 @@ exports.updateRoomCountInternal = async function (id, playerId, playerJoined, ca
             } else {
                 doc.player0 = playerId;
             }
+        } else {
+            callback("roomFull", null);
+            return null;
         }
     } else {
         // Avoid removing if not inside - can happen on last user Leave
@@ -151,8 +153,9 @@ exports.updateRoomCountInternal = async function (id, playerId, playerJoined, ca
 exports.actionGame = async function (req, res) {
     const id = req.params.id;
     const playerId = req.body.myId;
-    const doc = await roomModel.findById(id);
+    const doc = await findById(id);
     if (doc === null) {  // Can happen for non-existing rooms
+        handleMongooseResponse(res, "roomNotFound", null);
         return null;
     }
 
@@ -285,7 +288,7 @@ exports.getStats = async function (req, res) {
     res.json(stats);
 }
 
-function updateRoomStatus(doc) {
+async function updateRoomStatus(doc) {
     let newStatus = doc.status;
     if (doc.playerCount <= 0) {
         if (doc.status != RoomConstants.CLOSED) {
@@ -306,7 +309,9 @@ function updateRoomStatus(doc) {
     }
     if (newStatus != doc.status) {
         doc.status = newStatus;
-        doc.save();
+        return await doc.save().then(savedDoc => {
+            return savedDoc;
+        });
     }
     return doc;
 }
@@ -396,9 +401,14 @@ function checkForGameEnd(doc) {
     return {gameEnded: gameEnded, victory: victory, victoryPos: victoryPos, lastValue: lastValue};
 }
 
-function handleMongooseResponse(res, err, doc) {
-    if (err) {
-        res.send(err);
+async function findById(id) {
+    try {
+        return await roomModel.findById(id);
+    } catch (ex) {
+        return null;
     }
-    res.json(doc);
+}
+
+function handleMongooseResponse(res, err, doc) {
+    err ? res.send(err) : res.json(doc);
 }

@@ -16,13 +16,19 @@ export default function Home(props) {
 
     function onCancel() {
         setAddRoom(false);
+        document.body.style.overflow = "auto";
+    }
+
+    function handleBtnCreate() {
+        document.body.style.overflow = "hidden";
+        setAddRoom(!addRoom);
     }
 
     return (
-        <>
-            {!addRoom && <button onClick={() => setAddRoom(!addRoom)}>Create room</button>}
+        <div id={"home"}>
+            <button onClick={handleBtnCreate}>Create room</button>
             {addRoom && <AddRoom onAdd={onAdd} onCancel={onCancel}/>}
             <RoomList myId={props.myId} availableRooms={props.availableRooms}/>
-        </>
+        </div>
     );
 }

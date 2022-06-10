@@ -19,8 +19,8 @@ export default function RoomBlock(props) {
 
 
     return (
-        <div>
-            <h3>{props.room.name}</h3>
+        <div className={"roomBlock"}>
+            <h4>{props.room.name}</h4>
             <p>Starting player: {getStartingPlayer()}</p>
             {props.room.playerCount === 1 && <button onClick={handleBtnJoin}>Join!</button>}
         </div>

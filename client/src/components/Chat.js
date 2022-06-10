@@ -19,20 +19,32 @@ export default function Chat(props) {
     }
 
     return (
-        <div>
-            {props.chat.map(message => (
-                <p key={message.timestamp}
-                   className={message.received ? 'left' : 'right'}>{new Date(message.timestamp).toLocaleTimeString()}
-                    &nbsp;{message.received ? '<-' : '->'}&nbsp;{message.msg}</p>
-            ))}
+        <div id="chat">
+            <h3>Chat</h3>
+
+            <div id="msgContainer">
+                {props.chat.map(message => (
+                    <div key={message.timestamp}
+                         className={'msg ' + (message.received ? 'left' : 'right')}>
+                        <span className={'msgContent'}>
+                            <span
+                                className="date"><small>{new Date(message.timestamp).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</small></span>
+                            &nbsp;{message.msg}
+                        </span>
+                        <div className="clear"></div>
+                    </div>
+                ))}
+            </div>
 
             <form onSubmit={handleSubmit}>
                 <label>
-                    Message:
+                    <strong className={"medium"}>Message:&nbsp;</strong>
                     <input type="text" value={msg} onChange={handleMsgChange} required/>
                 </label>
-                <br/>
-                <input type="submit" value="Submit"/>
+                <input type="submit" value="Send"/>
             </form>
         </div>
     );

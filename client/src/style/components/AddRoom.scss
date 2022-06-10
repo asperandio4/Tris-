@@ -1,0 +1,41 @@
+@use '../variables' as v;
+
+#addRoom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  background-color: v.$popupBackground;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+  }
+
+  form {
+    padding: 20px;
+    border-radius: 3px;
+    background-color: v.$white;
+
+    .name {
+      margin-bottom: 10px;
+    }
+
+    .player label {
+      margin-left: 5px;
+    }
+
+    .buttonContainer {
+      margin-top: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-evenly;
+    }
+  }
+}

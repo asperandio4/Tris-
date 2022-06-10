@@ -22,3 +22,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .idea
+/client/src/style/*.map
+/client/src/style/pages/*.css
+/client/src/style/components/*.css
