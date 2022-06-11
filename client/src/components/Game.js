@@ -6,7 +6,7 @@ export default function Game(props) {
 
     const valuesToPrint = [];
     let row = -1;
-    props.values.forEach((v, i) => {
+    props.values.forEach((v, i) => {  //fill the valuesToPrint bi-dimensional array
         if (i % ELEMENTS_PER_ROW === 0) {
             row++;
             valuesToPrint[row] = [];
@@ -15,7 +15,7 @@ export default function Game(props) {
     })
 
     function handleBtnMark(i, j, val) {
-        if (props.started && !props.finished && props.myTurn && val === 2) {
+        if (props.started && !props.finished && props.myTurn && val === 2) { //only if it's a valid in-game move
             let index = i * ELEMENTS_PER_ROW + j;
             axios.post("http://localhost:4001/room/action/" + props.roomId,
                 {myId: props.myId, index: index})
@@ -23,6 +23,7 @@ export default function Game(props) {
         }
     }
 
+    /* Determines if the button to paint is one of those that led a player to victory*/
     function determineIfWinningPos(i, j) {
         const row = 'Row ';
         const column = 'Column ';
@@ -54,7 +55,7 @@ export default function Game(props) {
                         {Object.values(row).map((val, j) => (
                             <td key={i + '' + j}>
                                 <button onClick={() => handleBtnMark(i, j, val)}
-                                        className={val === 2 ? 'empty' : ('player' + val) + (determineIfWinningPos(i, j) ? ' highlighted' : '')}></button>
+                                        className={(val === 2 ? 'empty' : ('player' + val)) + (determineIfWinningPos(i, j) ? ' highlighted' : '')}></button>
                             </td>
                         ))}
                     </tr>

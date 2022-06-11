@@ -5,9 +5,10 @@ module.exports = function (app, props) {
     app.route('/rooms')
         .get(roomController.listRooms)
         .post((req, res) => {
-            roomController.addRoom(req, res);
-            props.updateVisibleRooms(null);
-            props.updateOnlineGames(null);
+            roomController.addRoom(req, res).then(() => {
+                props.updateVisibleRooms(null);
+                props.updateOnlineGames(null);
+            });
         });
     app.route('/rooms/player/:id')
         .get(roomController.getRoomsByPlayer);

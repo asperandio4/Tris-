@@ -7,6 +7,7 @@ export default function RoomBlock(props) {
         window.location.href = "/room/" + props.room._id;
     }
 
+    /* Determines the starting player based on the room starting position and the room empty spot */
     function getStartingPlayer() {
         let startingPlayer;
         if (props.room.player === ME) {

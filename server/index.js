@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
+// Allow Cross-Origin Resource Sharing on localhost:3000, the client app
 const cors = require("cors");
 const corsOpts = {
     origin: 'http://localhost:3000',
@@ -13,6 +14,8 @@ const routes = require("./src/routes/index");
 const RoomConstants = require("./src/models/roomConstants").RoomConstants;
 const RoomController = require("./src/controllers/roomController");
 
+/* Functions to push data through the socket, if a client's socket is passed then the data is pushed to him only,
+* every connected user receives the data update otherwise */
 let updateVisibleRooms = function (client) {
     RoomController.listRoomsInternal((err, doc) => {
         const visibleRooms = err ? [] : doc;
@@ -91,6 +94,7 @@ let functions = {
 };
 routes(app, functions);
 
+/* Use on client disconnection to update the room status and inform the players */
 function removeFromRoom(id) {
     RoomController.getRoomsByPlayerInternal(id, (err, doc) => {
         const roomsByPlayer = err ? [] : doc;
@@ -104,12 +108,13 @@ function removeFromRoom(id) {
     });
 }
 
+// Allow Cross-Origin Resource Sharing on localhost:3000, the client app
 const httpServer = require("http").createServer(app);
 const io = new (require("socket.io").Server)(httpServer, {
     cors: corsOpts
 });
 
-let clients = new Map;
+let clients = new Map;  //client id, socket
 io.on("connection", (socket) => {
     let id = socket.handshake.query.myId;
     console.log("New client connected: " + id);

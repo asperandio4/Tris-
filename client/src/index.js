@@ -5,6 +5,8 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import {BrowserRouter} from "react-router-dom";
 
+/* myId is used to identify the user through the navigation session
+* it's stored in the sessionStorage and allows to recognize the user when switching routes */
 let myId = sessionStorage.getItem('myId');
 if (myId == null) {
     myId = Math.random().toString(36).replace(/[^a-z]+/g, '');

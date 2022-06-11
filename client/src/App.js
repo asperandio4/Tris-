@@ -8,7 +8,7 @@ import React, {useCallback, useState} from "react";
 import socketIOClient from "socket.io-client";
 import "./style/App.css";
 
-const SERVER = "http://127.0.0.1:4001";
+const SERVER = "http://127.0.0.1:4001";  //server ip:port
 
 export default function App(props) {
     const [onlineUsers, setOnlineUsers] = useState(1);
@@ -28,6 +28,9 @@ export default function App(props) {
     const [gameVictoryPos, setGameVictoryPos] = useState('');
     const [chatMessages, setChatMessages] = useState([]);
 
+    /* On the first connection, or on myId change, it connects to a socket on the server to receive update data.
+    * It's the pages that need to use the socket that call this function, passing a callback to execute after the connection happens.
+    * This is done to prevent the app to connect multiple times to the server and to let components execute code right after connection. */
     const connectToSocket = useCallback(callback => {
         const socket = socketIOClient(SERVER, {query: 'myId=' + props.myId});
         socket.on("online_users", data => {
@@ -56,11 +59,11 @@ export default function App(props) {
             setGameVictoryPos(data.victoryPos);
         });
         socket.on('chat_message', message => {
-            setChatMessages(chatMessages => [...chatMessages, message]);
+            setChatMessages(chatMessages => [...chatMessages, message]);  //append the new message to the list
         });
-        socket.on('connect', callback);
+        socket.on('connect', callback);  //calls the callback on the calling page component
 
-        return () => socket.disconnect();
+        return () => socket.disconnect();  //disconnect on navigation end
     }, [props.myId]);
 
     return (

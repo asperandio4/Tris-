@@ -10,7 +10,7 @@ export default function Roompage(props) {
     const connectToSocket = props.connectToSocket;
     const myId = props.myId;
     useEffect(() => {
-        connectToSocket(() => {
+        connectToSocket(() => {  // on connection asks the server to join the room id
             axios.post("http://localhost:4001/room/join/" + id, {myId: myId})
                 .then(response => {
                     if (response.data === "roomNotFound") {
@@ -22,6 +22,7 @@ export default function Roompage(props) {
         });
     }, [connectToSocket, myId, id]);
 
+    // Used to prevent the user to leave mid-game unintentionally
     const handleBtnHome = useCallback(() => {
         if (props.started && !props.finished && !props.aborted && !window.confirm("Are you sure you want to leave mid-game?")) {
             return;

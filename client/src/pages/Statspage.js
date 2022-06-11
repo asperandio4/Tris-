@@ -10,6 +10,7 @@ export default function Statspage() {
     const [opponentWins, setOpponentWins] = useState(0);
     const [victoryPosition, setVictoryPosition] = useState('');
 
+    //on first render asks stats data to the server
     useEffect(() => {
         axios.get("http://localhost:4001/stats").then(stats => {
             setPlayedGames(stats.data.playedGames);
@@ -21,10 +22,6 @@ export default function Statspage() {
             setVictoryPosition(stats.data.victoryPosition);
         });
     }, []);
-
-    function handleBtnHome() {
-        window.location.href = "/";
-    }
 
     return (
         <div id={"statspage"} className={"page"}>

@@ -7,8 +7,7 @@ exports.RoomConstants = {
     ABORTED: 5,
 
     SPOTS: 9,
-    SPOTS_PER_ROW: 3,
-    CIRCLE: 0,
-    CROSS: 1,
-    UNSET: 2,
+    MARK_P0: 0,
+    MARK_P1: 1,
+    MARK_UNSET: 2,
 }

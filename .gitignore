@@ -25,3 +25,5 @@ yarn-error.log*
 /client/src/style/*.map
 /client/src/style/pages/*.css
 /client/src/style/components/*.css
+/client/src/style/components/*.map
+/client/src/style/pages/*.map

@@ -6,6 +6,7 @@ import RoomList from "./RoomList";
 export default function Home(props) {
     const [addRoom, setAddRoom] = useState(false);
 
+    /* On room creation send the user to the newly created room */
     function onAdd(room) {
         axios.post("http://localhost:4001/rooms", room)
             .then(response => {
@@ -21,7 +22,7 @@ export default function Home(props) {
 
     function handleBtnCreate() {
         document.body.style.overflow = "hidden";
-        setAddRoom(!addRoom);
+        setAddRoom(true);
     }
 
     return (

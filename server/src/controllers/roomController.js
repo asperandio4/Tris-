@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/tris');
 const roomModel = require('../models/roomModel')(mongoose);
 
+/** Many function call an Internal sub-function, used by the server/index.js as well.
+ * This is done to reuse code internally, without making new http requests.
+ * The Internal sub-function accepts a callback parameter, which is usually called when the operations on the DB are done */
+
 exports.listRooms = function (req, res) {
     exports.listRoomsInternal((err, doc) => handleMongooseResponse(res, err, doc));
 }
@@ -25,24 +29,30 @@ exports.getRoomsByPlayerInternal = function (playerToFind, callback) {
 exports.getRoom = async function (req, res, returnRoom) {
     const id = req.params.id;
     const doc = await findById(id);
-    handleMongooseResponse(res, null, doc);
+    if (doc === null) {  // Can happen for non-existing rooms
+        handleMongooseResponse(res, "roomNotFound", null);
+    } else {
+        handleMongooseResponse(res, null, doc);
+    }
     if (returnRoom) {
         return doc;
     }
 }
 
-exports.addRoom = function (req, res) {
+exports.addRoom = async function (req, res) {
+    //New room setup
     req.body.status = RoomConstants.NEW;
     req.body.startingPlayer = req.body.player;
     req.body.playerCount = 0;
     req.body.player0 = '';
     req.body.player1 = '';
-    req.body.values = Array(RoomConstants.SPOTS).fill(RoomConstants.UNSET);
+    req.body.values = Array(RoomConstants.SPOTS).fill(RoomConstants.MARK_UNSET);
     req.body.winner = '';
     req.body.victoryPos = '';
     req.body.matchNum = 0;
-    new roomModel(req.body).save(function (err, doc) {
+    await new roomModel(req.body).save(function (err, doc) {
         handleMongooseResponse(res, err, doc);
+        return err ? null : doc;
     })
 }
 
@@ -82,7 +92,7 @@ exports.rematchGame = async function (req, res) {
     doc.player0 = doc.player1;
     doc.player1 = temp;
     doc.status = RoomConstants.STARTED;
-    doc.values = Array(RoomConstants.SPOTS).fill(RoomConstants.UNSET);
+    doc.values = Array(RoomConstants.SPOTS).fill(RoomConstants.MARK_UNSET);
     doc.winner = '';
     doc.victoryPos = '';
     doc.matchNum = doc.matchNum + 1;
@@ -95,7 +105,7 @@ exports.rematchGame = async function (req, res) {
 exports.countActiveRooms = function (req, res) {
     exports.listRoomsInternal((err, doc) => handleMongooseResponse(res, err, doc));
 }
-exports.countActiveRoomsInternal = function (callback) {
+exports.countActiveRoomsInternal = function (callback) {  //A room is active if it's full, started or finished
     roomModel.count({status: {$in: [RoomConstants.FULL, RoomConstants.STARTED, RoomConstants.FINISHED]}}, function (err, doc) {
         callback(err, doc);
     });
@@ -159,13 +169,14 @@ exports.actionGame = async function (req, res) {
         return null;
     }
 
-    doc.values[req.body.index] = doc.player0 == playerId ? RoomConstants.CIRCLE : RoomConstants.CROSS;
+    //Makes the move and checks for game end
+    doc.values[req.body.index] = doc.player0 == playerId ? RoomConstants.MARK_P0 : RoomConstants.MARK_P1;
     doc.player = !doc.player;
     const checkResult = checkForGameEnd(doc);
     if (checkResult.gameEnded) {
         doc.status = RoomConstants.FINISHED;
         if (checkResult.victory) {
-            doc.winner = checkResult.lastValue == RoomConstants.CIRCLE ? 'player0' : 'player1';
+            doc.winner = checkResult.lastValue == RoomConstants.MARK_P0 ? 'player0' : 'player1';
             doc.victoryPos = checkResult.victoryPos;
         } else {
             doc.winner = '';
@@ -194,7 +205,7 @@ exports.getStats = async function (req, res) {
         {$match: {status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}},  //only finished or closed games
         {$project: {values: 1}},  //get values
         {$unwind: "$values"},
-        {$match: {"values": {$ne: RoomConstants.UNSET}}},  // exclude unset values
+        {$match: {"values": {$ne: RoomConstants.MARK_UNSET}}},  // exclude unset values
         {
             $group: {
                 _id: "$_id",
@@ -208,7 +219,7 @@ exports.getStats = async function (req, res) {
             }
         },
     ]);
-    stats.meanMoves = meanMoves ? meanMoves[0].mean : 0;
+    stats.meanMoves = meanMoves && Array.isArray(meanMoves) && meanMoves.length > 0 ? meanMoves[0].mean : 0;
 
     //Most winning player (starter vs opponent)
     const winningPlayer = await roomModel.aggregate([
@@ -250,13 +261,13 @@ exports.getStats = async function (req, res) {
 
     //Most used victory position
     const victoryPosition = await roomModel.aggregate([
-        {$match: {$and: [{status: {$in: [3, 4]}}, {victoryPos: {$ne: ''}}]}},
+        {$match: {$and: [{status: {$in: [RoomConstants.FINISHED, RoomConstants.CLOSED]}}, {victoryPos: {$ne: ''}}]}},
         {$project: {victoryPos: 1}},
         {$sortByCount: "$victoryPos"},
         {$limit: 1},
         {$project: {_id: 1}},
     ]);
-    stats.victoryPosition = victoryPosition ? victoryPosition[0]._id : '';
+    stats.victoryPosition = victoryPosition && Array.isArray(victoryPosition) && victoryPosition.length > 0 ? victoryPosition[0]._id : '-';
 
     //Mean number of rematches
     const meanRematches = await roomModel.aggregate([
@@ -270,7 +281,7 @@ exports.getStats = async function (req, res) {
         },
         {$sort: {"_id": 1}}
     ]);
-    if (meanRematches) {
+    if (meanRematches && Array.isArray(meanRematches) && meanRematches.length > 0) {
         // Sum real number of rematches
         let meanRematchesPerGame = 0;
         for (let i = 0; i < meanRematches.length - 1; i++) {
@@ -288,6 +299,7 @@ exports.getStats = async function (req, res) {
     res.json(stats);
 }
 
+/* Determines if the current room status is to update based on the number of players inside it and its last status */
 async function updateRoomStatus(doc) {
     let newStatus = doc.status;
     if (doc.playerCount <= 0) {
@@ -316,16 +328,17 @@ async function updateRoomStatus(doc) {
     return doc;
 }
 
+/* Checks if the last move caused a victory or no more moves are possible */
 function checkForGameEnd(doc) {
     const values = doc.values;
-    const valuesPerRow = values.length / RoomConstants.SPOTS_PER_ROW;
+    const valuesPerRow = values.length / Math.sqrt(RoomConstants.SPOTS);
 
     let victory = false;
     let victoryPos = '';
-    let lastValue = RoomConstants.UNSET;
+    let lastValue = RoomConstants.MARK_UNSET;
     //Check per rows
     for (let i = 0; i < valuesPerRow && !victory; i++) {
-        if (values[i * valuesPerRow] == RoomConstants.UNSET) {
+        if (values[i * valuesPerRow] == RoomConstants.MARK_UNSET) {
             continue;
         }
         lastValue = values[i * valuesPerRow];
@@ -343,7 +356,7 @@ function checkForGameEnd(doc) {
 
     //Check per cols
     for (let i = 0; i < valuesPerRow && !victory; i++) {
-        if (values[i] == RoomConstants.UNSET) {
+        if (values[i] == RoomConstants.MARK_UNSET) {
             continue;
         }
         lastValue = values[i];
@@ -360,7 +373,7 @@ function checkForGameEnd(doc) {
     }
 
     //Check per main diag
-    if (!victory && values[0] != RoomConstants.UNSET) {
+    if (!victory && values[0] != RoomConstants.MARK_UNSET) {
         lastValue = values[0];
         for (let i = 1; i < valuesPerRow; i++) {
             if (values[i * (valuesPerRow + 1)] == lastValue) {
@@ -375,7 +388,7 @@ function checkForGameEnd(doc) {
     }
 
     //Check per secondary diag
-    if (!victory && values[valuesPerRow - 1] != RoomConstants.UNSET) {
+    if (!victory && values[valuesPerRow - 1] != RoomConstants.MARK_UNSET) {
         lastValue = values[valuesPerRow - 1];
         for (let i = 2; i <= valuesPerRow; i++) {
             if (values[i * (valuesPerRow - 1)] == lastValue) {
@@ -389,10 +402,10 @@ function checkForGameEnd(doc) {
         }
     }
 
-    //Check for no more moves available
+    //Check for no more available moves
     let gameEnded = true;
     for (let i = 0; i < values.length && !victory; i++) {
-        if (values[i] == RoomConstants.UNSET) {
+        if (values[i] == RoomConstants.MARK_UNSET) {
             gameEnded = false;
             break;
         }
@@ -401,6 +414,7 @@ function checkForGameEnd(doc) {
     return {gameEnded: gameEnded, victory: victory, victoryPos: victoryPos, lastValue: lastValue};
 }
 
+/* Wraps the mongoose findById to handle its exceptions in case of no room found */
 async function findById(id) {
     try {
         return await roomModel.findById(id);
@@ -409,6 +423,7 @@ async function findById(id) {
     }
 }
 
+/* Sends the response to the client */
 function handleMongooseResponse(res, err, doc) {
     err ? res.send(err) : res.json(doc);
 }
