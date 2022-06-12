@@ -1,15 +1,17 @@
 import React, {useEffect} from "react";
 import Home from "../components/Home";
+import {Link} from "react-router-dom";
+import axios from "axios";
 
 export default function Homepage(props) {
-    const connectToSocket = props.connectToSocket;
     useEffect(() => {
-        connectToSocket(() => {});
-    }, [connectToSocket]);
+        // Retrieve the updated room list from the server
+        axios.get("http://localhost:4001/rooms").then();
+    }, []);
 
     return (
         <div id={"homepage"} className={"page"}>
-            <div className={"nav"}>View: <a href="/stats">Stats</a></div>
+            <div className={"nav"}>View: <Link to="/stats">Stats</Link></div>
 
             <h2>Homepage</h2>
             <div id="info">

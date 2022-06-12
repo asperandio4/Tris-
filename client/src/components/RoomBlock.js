@@ -1,10 +1,12 @@
 import React from "react";
+import {useNavigate} from "react-router-dom";
 
 export default function RoomBlock(props) {
+    const navigate = useNavigate();
     const ME = false;
 
     function handleBtnJoin() {
-        window.location.href = "/room/" + props.room._id;
+        navigate("/room/" + props.room._id);
     }
 
     /* Determines the starting player based on the room starting position and the room empty spot */

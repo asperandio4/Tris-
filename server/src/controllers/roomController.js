@@ -80,10 +80,13 @@ exports.rematchGame = async function (req, res) {
     }
 
     // Save the previous game for statistics, it has a new _id
-    doc.status = RoomConstants.CLOSED;
     let obj = doc.toObject();
     delete obj._id;
     const docClone = new roomModel(obj);
+    docClone.status = RoomConstants.CLOSED;
+    docClone.playerCount = 0;
+    docClone.player0 = '';
+    docClone.player1 = '';
     docClone.save();
 
     // Overwrite the current game, version number increases
@@ -219,7 +222,7 @@ exports.getStats = async function (req, res) {
             }
         },
     ]);
-    stats.meanMoves = meanMoves && Array.isArray(meanMoves) && meanMoves.length > 0 ? meanMoves[0].mean : 0;
+    stats.meanMoves = checkIfValidAggregateResponse(meanMoves) ? meanMoves[0].mean : 0;
 
     //Most winning player (starter vs opponent)
     const winningPlayer = await roomModel.aggregate([
@@ -249,7 +252,7 @@ exports.getStats = async function (req, res) {
         },
     ]);
     stats.winningPlayer = {starter: 0, opponent: 0};
-    if (winningPlayer) {
+    if (checkIfValidAggregateResponse(winningPlayer)) {
         winningPlayer.forEach(player => {
             if (player._id === "starter") {
                 stats.winningPlayer.starter = player.count;
@@ -267,7 +270,7 @@ exports.getStats = async function (req, res) {
         {$limit: 1},
         {$project: {_id: 1}},
     ]);
-    stats.victoryPosition = victoryPosition && Array.isArray(victoryPosition) && victoryPosition.length > 0 ? victoryPosition[0]._id : '-';
+    stats.victoryPosition = checkIfValidAggregateResponse(victoryPosition) ? victoryPosition[0]._id : '-';
 
     //Mean number of rematches
     const meanRematches = await roomModel.aggregate([
@@ -281,7 +284,7 @@ exports.getStats = async function (req, res) {
         },
         {$sort: {"_id": 1}}
     ]);
-    if (meanRematches && Array.isArray(meanRematches) && meanRematches.length > 0) {
+    if (checkIfValidAggregateResponse(meanRematches)) {
         // Sum real number of rematches
         let meanRematchesPerGame = 0;
         for (let i = 0; i < meanRematches.length - 1; i++) {
@@ -426,4 +429,9 @@ async function findById(id) {
 /* Sends the response to the client */
 function handleMongooseResponse(res, err, doc) {
     err ? res.send(err) : res.json(doc);
+}
+
+/* Check if the response is valid to proceed with calculations using its data */
+function checkIfValidAggregateResponse(response) {
+    return response && Array.isArray(response) && response.length > 0;
 }

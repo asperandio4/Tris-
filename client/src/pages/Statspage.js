@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import axios from "axios";
+import {Link} from "react-router-dom";
 
 export default function Statspage() {
     const [playedGames, setPlayedGames] = useState(0);
@@ -25,7 +26,7 @@ export default function Statspage() {
 
     return (
         <div id={"statspage"} className={"page"}>
-            <div className={"nav"}>View: <a href="/">Home</a></div>
+            <div className={"nav"}>View: <Link to="/">Home</Link></div>
             <h2>Stats</h2>
 
             <span>Played games: <strong>{playedGames}</strong></span><br/>

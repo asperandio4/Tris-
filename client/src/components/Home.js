@@ -2,16 +2,18 @@ import React, {useState} from "react";
 import AddRoom from "./AddRoom";
 import axios from "axios";
 import RoomList from "./RoomList";
+import {useNavigate} from "react-router-dom";
 
 export default function Home(props) {
     const [addRoom, setAddRoom] = useState(false);
+    const navigate = useNavigate();
 
     /* On room creation send the user to the newly created room */
     function onAdd(room) {
         axios.post("http://localhost:4001/rooms", room)
             .then(response => {
                 onCancel();
-                window.location.href = "/room/" + response.data._id;
+                navigate("/room/" + response.data._id);
             });
     }
 
