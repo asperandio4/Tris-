@@ -1,5 +1,5 @@
-import {Link, useNavigate, useParams} from 'react-router-dom';
-import React, {useCallback, useEffect, useState} from "react";
+import {Link, UNSAFE_NavigationContext, useNavigate, useParams} from "react-router-dom";
+import React, {useCallback, useContext, useEffect, useState} from "react";
 import axios from "axios";
 import Game from "../components/Game";
 import Chat from "../components/Chat";
@@ -26,8 +26,9 @@ export default function Roompage(props) {
     }, [myId, id, navigate]);
 
     // Used to prevent the user to leave mid-game unintentionally
-    const handleBtnHome = useCallback(() => {
-        if (gameInfo.started && !gameInfo.finished && !gameInfo.aborted && !window.confirm("Are you sure you want to leave mid-game?")) {
+    const handleBtnHome = useCallback((question) => {
+        if (gameInfo.started && !gameInfo.finished && !gameInfo.aborted &&
+            (!question || !window.confirm("Are you sure you want to leave mid-game?"))) {
             return;
         }
 
@@ -40,16 +41,28 @@ export default function Roompage(props) {
 
     useEffect(() => {
         const logoHomeLink = document.getElementById("logo_home_link");
-        logoHomeLink.onclick = e => {
+        logoHomeLink.onclick = (e) => {
             e.preventDefault();
-            handleBtnHome();
+            handleBtnHome(true)
         };
-
         return () => {
-            logoHomeLink.onclick = e => e;
+            logoHomeLink.onclick = (e) => {
+                e.defaultPrevented = false;
+                return true;
+            };
         };
     }, [handleBtnHome]);
 
+    // Used to force game leaving on browser back button pressed
+    const navigator = useContext(UNSAFE_NavigationContext).navigator;
+    useEffect(() => {
+        const listener = ({action}) => {
+            if (action === "POP") {
+                handleBtnHome(false)
+            }
+        };
+        return navigator.listen(listener);
+    }, [navigator, handleBtnHome]);
 
     function handleBtnStart() {
         axios.post("http://localhost:4001/room/start/" + id, {myId: myId})
@@ -76,7 +89,7 @@ export default function Roompage(props) {
                 </>
                 :
                 <>
-                    <button onClick={handleBtnHome} className={"cancel"}>Leave</button>
+                    <button onClick={() => {handleBtnHome(true);}} className={"cancel"}>Leave</button>
 
                     {Object.keys(gameInfo).length > 0 ?
                         <>

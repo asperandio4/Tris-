@@ -39,6 +39,8 @@ export default function Game(props) {
         } else if (props.victoryPos === secondDiag) {
             return i + j === ELEMENTS_PER_ROW - 1;
         }
+
+        return false;
     }
 
     return (

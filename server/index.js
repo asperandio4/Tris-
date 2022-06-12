@@ -94,7 +94,7 @@ let functions = {
 };
 routes(app, functions);
 
-/* Use on client disconnection to update the room status and inform the players */
+/* Used on client disconnection to update the room status and inform the players */
 function removeFromRoom(id) {
     RoomController.getRoomsByPlayerInternal(id, (err, doc) => {
         const roomsByPlayer = err ? [] : doc;
