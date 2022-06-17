@@ -10,7 +10,7 @@ export default function Home(props) {
 
     /* On room creation send the user to the newly created room */
     function onAdd(room) {
-        axios.post("http://localhost:4001/rooms", room)
+        axios.post(props.SERVER + "/rooms", room)
             .then(response => {
                 onCancel();
                 navigate("/room/" + response.data._id);

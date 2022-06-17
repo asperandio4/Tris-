@@ -6,8 +6,8 @@ import axios from "axios";
 export default function Homepage(props) {
     useEffect(() => {
         // Retrieve the updated room list from the server
-        axios.get("http://localhost:4001/rooms").then();
-    }, []);
+        axios.get(props.SERVER + "/rooms").then();
+    }, [props.SERVER]);
 
     return (
         <div id={"homepage"} className={"page"}>
@@ -23,7 +23,7 @@ export default function Homepage(props) {
                 </p>
 
             </div>
-            <Home myId={props.myId} availableRooms={props.availableRooms}/>
+            <Home SERVER={props.SERVER} myId={props.myId} availableRooms={props.availableRooms}/>
         </div>
     );
 }

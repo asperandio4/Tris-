@@ -30,7 +30,8 @@ export default function Chat(props) {
                             <span
                                 className="date"><small>{new Date(message.timestamp).toLocaleTimeString([], {
                                 hour: '2-digit',
-                                minute: '2-digit'
+                                minute: '2-digit',
+                                hour12: false
                             })}</small></span>
                             &nbsp;{message.msg}
                         </span>

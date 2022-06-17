@@ -66,13 +66,14 @@ export default function App(props) {
             {socketConnected ?
                 <Routes>
                     <Route path="/" exact
-                           element={<Homepage myId={props.myId} onlineUsers={onlineUsers} onlineGames={onlineGames}
-                                              playedGames={playedGames} availableRooms={availableRooms}/>}/>
+                           element={<Homepage SERVER={SERVER} myId={props.myId} onlineUsers={onlineUsers}
+                                              onlineGames={onlineGames} playedGames={playedGames}
+                                              availableRooms={availableRooms}/>}/>
                     <Route path="/room/:id"
-                           element={<Roompage myId={props.myId} gameInfo={gameInfo} chat={chatMessages}
+                           element={<Roompage SERVER={SERVER} myId={props.myId} gameInfo={gameInfo} chat={chatMessages}
                                               onGameLeaving={onGameLeaving}/>}/>
                     <Route path="/stats"
-                           element={<Statspage/>}/>
+                           element={<Statspage SERVER={SERVER}/>}/>
 
                     <Route path="not-found" element={<NotFoundpage/>}/>
                     <Route path="*" element={<NotFoundpage/>}/>

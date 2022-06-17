@@ -1,15 +1,17 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 // Allow Cross-Origin Resource Sharing on localhost:3000, the client app
-const cors = require("cors");
+/*const cors = require("cors");
 const corsOpts = {
     origin: 'http://localhost:3000',
     methods: ["GET", "POST"],
 };
 app.options("*", cors(corsOpts));
-app.use(cors(corsOpts));
+app.use(cors(corsOpts));*/
 const routes = require("./src/routes/index");
 const RoomConstants = require("./src/models/roomConstants").RoomConstants;
 const RoomController = require("./src/controllers/roomController");
@@ -110,9 +112,9 @@ function removeFromRoom(id) {
 
 // Allow Cross-Origin Resource Sharing on localhost:3000, the client app
 const httpServer = require("http").createServer(app);
-const io = new (require("socket.io").Server)(httpServer, {
+const io = new (require("socket.io").Server)(httpServer, /*{
     cors: corsOpts
-});
+}*/);
 
 let clients = new Map;  //client id, socket
 io.on("connection", (socket) => {

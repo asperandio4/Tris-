@@ -15,7 +15,7 @@ export default function Roompage(props) {
 
     useEffect(() => {
         // Asks the server to join the room id
-        axios.post("http://localhost:4001/room/join/" + id, {myId: myId})
+        axios.post(props.SERVER + "/room/join/" + id, {myId: myId})
             .then(response => {
                 if (response.data === "roomNotFound") {
                     navigate("/not-found");
@@ -23,7 +23,7 @@ export default function Roompage(props) {
                     setRoomFull(true);
                 }
             });
-    }, [myId, id, navigate]);
+    }, [props.SERVER, myId, id, navigate]);
 
     // Used to prevent the user to leave mid-game unintentionally
     const handleBtnHome = useCallback((question) => {
@@ -32,12 +32,12 @@ export default function Roompage(props) {
             return;
         }
 
-        axios.post("http://localhost:4001/room/leave/" + id, {myId: myId})
+        axios.post(props.SERVER + "/room/leave/" + id, {myId: myId})
             .then(() => {
                 onGameLeaving();
                 navigate("/");
             });
-    }, [gameInfo.started, gameInfo.finished, gameInfo.aborted, id, myId, navigate, onGameLeaving]);
+    }, [props.SERVER, gameInfo.started, gameInfo.finished, gameInfo.aborted, id, myId, navigate, onGameLeaving]);
 
     useEffect(() => {
         const logoHomeLink = document.getElementById("logo_home_link");
@@ -65,17 +65,17 @@ export default function Roompage(props) {
     }, [navigator, handleBtnHome]);
 
     function handleBtnStart() {
-        axios.post("http://localhost:4001/room/start/" + id, {myId: myId})
+        axios.post(props.SERVER + "/room/start/" + id, {myId: myId})
             .then();
     }
 
     function handleBtnRematch() {
-        axios.post("http://localhost:4001/room/rematch/" + id, {myId: myId})
+        axios.post(props.SERVER + "/room/rematch/" + id, {myId: myId})
             .then();
     }
 
     function onSendMsg(msg) {
-        axios.post("http://localhost:4001/room/msg/" + id, {msg: msg, from: myId})
+        axios.post(props.SERVER + "/room/msg/" + id, {msg: msg, from: myId})
             .then();
     }
 
@@ -114,7 +114,7 @@ export default function Roompage(props) {
                                     </div>
 
 
-                                    <Game myId={myId} roomId={id}
+                                    <Game SERVER={props.SERVER} myId={myId} roomId={id}
                                           myTurn={gameInfo.myTurn}
                                           values={gameInfo.values} myName={gameInfo.myName}
                                           victoryPos={gameInfo.victoryPos}

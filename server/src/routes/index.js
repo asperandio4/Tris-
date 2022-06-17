@@ -1,6 +1,5 @@
+const path = require("path");
 module.exports = function (app, props) {
-    app.route('/').get((req, res) => res.send({response: "I am alive"}).status(200));
-
     let roomController = require('../controllers/roomController');
     app.route('/rooms')
         .get(roomController.listRooms)
@@ -17,7 +16,7 @@ module.exports = function (app, props) {
     app.route('/rooms/played-count')
         .get(roomController.countPlayedGames)
 
-    app.route('/room/:id')
+    app.route('/room/read/:id')
         .get((req, res) => roomController.getRoom(req, res, false));
     app.route('/room/join/:id')
         .post((req, res) => {
@@ -59,6 +58,10 @@ module.exports = function (app, props) {
                 props.newChatMessage(room, {msg: req.body.msg, from: req.body.from});
             });
         });
-    app.route('/stats')
+    app.route('/read-stats')
         .get(roomController.getStats)
+
+    app.route('/*').get((req, res) => {
+        res.sendFile((path.join(__dirname, '../../../client/build', 'index.html')));
+    });
 };

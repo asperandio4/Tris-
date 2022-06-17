@@ -17,7 +17,7 @@ export default function Game(props) {
     function handleBtnMark(i, j, val) {
         if (props.started && !props.finished && props.myTurn && val === 2) { //only if it's a valid in-game move
             let index = i * ELEMENTS_PER_ROW + j;
-            axios.post("http://localhost:4001/room/action/" + props.roomId,
+            axios.post(props.SERVER + "/room/action/" + props.roomId,
                 {myId: props.myId, index: index})
                 .then();
         }
